@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8">
+  <title>Den Sorte Skole – Metal Jeopardy</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Metal+Mania&display=swap');
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Metal Mania', cursive;
+      color: #f2f2f2;
+      text-align: center;
+      background: url('background.jpg') no-repeat center center fixed;
+      background-size: cover;
+    }
+
+    h1 {
+      margin: 20px;
+      font-size: 64px;
+      color: #e60000;
+      text-shadow: 2px 2px 10px #ff0000, 0 0 25px #660000;
+      background: rgba(0,0,0,0.7);
+      display: inline-block;
+      padding: 10px 20px;
+      border: 3px solid #660000;
+      border-radius: 10px;
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(var(--cols), 1fr);
+      gap: 10px;
+      width: 95%;
+      margin: auto;
+    }
+
+    .card {
+      background: rgba(20,20,20,0.85);
+      border: 2px solid #b30000;
+      border-radius: 8px;
+      padding: 40px 0;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.3s, background 0.3s, box-shadow 0.3s;
+      color: #ff3333;
+      text-shadow: 1px 1px 4px black;
+      perspective: 1000px;
+    }
+
+    /* Flip + flamme/glød animation */
+    .card.used {
+      animation: flipAndGlow 0.8s forwards;
+      background: rgba(0,0,0,0.7);
+      color: #333;
+      border-color: #333;
+      cursor: not-allowed;
+      text-shadow: none;
+    }
+
+    @keyframes flipAndGlow {
+      0% { transform: rotateY(0deg) scale(1); box-shadow: 0 0 0 #ff0000 inset; }
+      50% { transform: rotateY(180deg) scale(1.2); box-shadow: 0 0 20px #ff6600 inset, 0 0 30px #ff3300; }
+      70% { transform: rotateY(180deg) scale(1); box-shadow: 0 0 15px #ff3300 inset, 0 0 25px #ff6600; }
+      100% { transform: rotateY(180deg) scale(1); box-shadow: 0 0 5px #ff0000 inset; }
+    }
+
+    .card:hover { background: rgba(80,0,0,0.9); transform: scale(1.05); }
+
+    .category {
+      background: rgba(102,0,0,0.9);
+      font-size: 22px;
+      padding: 15px;
+      border-radius: 5px;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: #fff;
+      text-shadow: 2px 2px 6px black;
+    }
+
+    /* Timer overlay */
+    .timer-overlay {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: radial-gradient(circle, #660000 0%, #000 80%);
+      border-radius: 50%;
+      width: 220px;
+      height: 220px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 72px;
+      font-weight: bold;
+      color: #fff;
+      border: 6px solid #ff0000;
+      animation: pulse 1s infinite;
+      visibility: hidden;
+      z-index: 1000;
+      text-shadow: 2px 2px 10px #ff0000;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 15px #ff0000; }
+      50% { box-shadow: 0 0 40px #ff0000; }
+      100% { box-shadow: 0 0 15px #ff0000; }
+    }
+
+    /* Spotify iframe helt skjult */
+    #spotifyPlayer {
+      display: none;
+      width: 0;
+      height: 0;
+      border: 0;
+    }
+
+    /* Play overlay */
+    .play-overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.85);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 2000;
+    }
+    .play-overlay button {
+      font-size: 28px;
+      padding: 20px 40px;
+      border: 3px solid #ff0000;
+      border-radius: 10px;
+      background: #000;
+      color: #ff3333;
+      cursor: pointer;
+      text-shadow: 2px 2px 6px black;
+      transition: transform 0.2s, background 0.2s;
+    }
+    .play-overlay button:hover { background: #400000; transform: scale(1.1); }
+  </style>
+</head>
+<body>
+  <h1>Den Sorte Skole</h1>
+  <div id="board" class="board"></div>
+
+  <iframe id="spotifyPlayer" allow="autoplay; encrypted-media"></iframe>
+  <div id="timer" class="timer-overlay">10</div>
+
+  <script>
+    const categories = [
+      { name: "Metallica", songs: ["https://open.spotify.com/embed/track/4nWyCPmijjNqHAWHshcXGp","https://open.spotify.com/embed/track/2MuWTIM3b0YEAskbeeFE1i","https://open.spotify.com/embed/track/6D9urR9PPD3A8zytBR9CqU","https://open.spotify.com/embed/track/3S5VjU7CpiF6joZ0SaE3V8","https://open.spotify.com/embed/track/0nLiqZ6A27jJri2VCalIUs"]},
+      { name: "Iron Maiden", songs: ["https://open.spotify.com/embed/track/5G56W7vxbcCqvAdN6nKt8c","https://open.spotify.com/embed/track/3gdewACMIVMEWVbyb8O9sY","https://open.spotify.com/embed/track/4A3JYcU8Zz0bqYpU4QwJ4o","https://open.spotify.com/embed/track/4iV5W9uYEdYUVa79Axb7Rh","https://open.spotify.com/embed/track/0ECRH9YbEyfZcblINjh1VR"]},
+      { name: "Slayer", songs: ["https://open.spotify.com/embed/track/3ZOEytgrvLwQaqXreDs2Jx","https://open.spotify.com/embed/track/1N64PvvI6RsCRawA1OJslD","https://open.spotify.com/embed/track/0cZ0G90UlNlbDpbrvbeFXS","https://open.spotify.com/embed/track/6RsWqX8zABZLhZydXxEFOm","https://open.spotify.com/embed/track/7wOyUekSLq4Uu23pIYJR2L"]},
+      { name: "Black Sabbath", songs: ["https://open.spotify.com/embed/track/7N3PAbqfTjSEU1edb2tY8j","https://open.spotify.com/embed/track/3U21A07gAloCc4P7J8rxcn","https://open.spotify.com/embed/track/3R7S1jU0JpQzA94vm2XyoY","https://open.spotify.com/embed/track/4IpfjSjtJ8AgtSjb5m8ZMn","https://open.spotify.com/embed/track/5IH6FPUwQTxPSXurCrcIov"]},
+      { name: "Judas Priest", songs: ["https://open.spotify.com/embed/track/5QVZot9oE9KnIp83QXRquv","https://open.spotify.com/embed/track/0b9oOr2ZgvyQu88wzixux9","https://open.spotify.com/embed/track/2Z2l1W1wgWkU1n2zT0b0rV","https://open.spotify.com/embed/track/6YfJYp5UttWgNcwOe6Q5lM","https://open.spotify.com/embed/track/5UVaA2QWfT0mO6EYGSlFCg"]}
+    ];
+
+    const points = [100,200,300,400,500];
+    document.documentElement.style.setProperty('--cols', categories.length);
+
+    const board = document.getElementById('board');
+    const player = document.getElementById('spotifyPlayer');
+    const timerEl = document.getElementById('timer');
+    let timerInterval;
+
+    // Byg board
+    categories.forEach(cat => {
+      const header = document.createElement('div');
+      header.className = 'category';
+      header.textContent = cat.name;
+      board.appendChild(header);
+    });
+
+    points.forEach((p,rowIndex)=>{
+      categories.forEach((cat,colIndex)=>{
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.textContent = p;
+        card.addEventListener('click', ()=>{
+          if(!card.classList.contains('used')){
+            card.classList.add('used');
+            showPlayOverlay(cat.songs[rowIndex]);
+          }
+        });
+        board.appendChild(card);
+      });
+    });
+
+    function showPlayOverlay(songUrl){
+      const overlay = document.createElement('div');
+      overlay.className='play-overlay';
+      overlay.innerHTML=`<button>Play musik</button>`;
+      document.body.appendChild(overlay);
+
+      overlay.querySelector('button').addEventListener('click', ()=>{
+        player.src=songUrl;          // musikken starter når brugeren trykker play
+        overlay.remove();
+        startTimer(10);               // timer starter først her
+      });
+    }
+
+    function startTimer(seconds){
+      clearInterval(timerInterval);
+      let timeLeft = seconds;
+      timerEl.textContent = timeLeft;
+      timerEl.style.visibility='visible';
+
+      timerInterval = setInterval(()=>{
+        timeLeft--;
+        timerEl.textContent = timeLeft;
+        if(timeLeft<=0){
+          clearInterval(timerInterval);
+          timerEl.style.visibility='hidden';
+        }
+      },1000);
+    }
+  </script>
+</body>
+</html>
