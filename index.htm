@@ -36,7 +36,7 @@ let teams=[];
 let gameStarted=false;
 
 // QR-kode genereres med join.html
-new QRious({element:document.getElementById('qrCode'),value:window.location.origin+'/join.htm',size:200});
+new QRious({element:document.getElementById('qrCode'),value:window.location.origin+'/densorteskole/join.htm',size:200});
 
 // Lyt til teams fra Firebase
 db.ref("teams").on('value',snapshot=>{
