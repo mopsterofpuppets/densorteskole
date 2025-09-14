@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<title>Join Den Sorte Skole</title>
+<style>
+body{font-family:sans-serif;text-align:center;padding:20px;}
+input{padding:10px;font-size:18px;width:250px;}
+button{padding:10px 20px;font-size:18px;margin-top:10px;cursor:pointer;}
+</style>
+</head>
+<body>
+<h2>Velkommen til Den Sorte Skole</h2>
+<p>Indtast holdnavn (max 25 tegn)</p>
+<input id="teamName" maxlength="25" placeholder="Holdnavn">
+<br>
+<button id="joinBtn">Join spillet</button>
+
+<script src="firebase_c.js"></script>
+<script>
+const joinBtn=document.getElementById('joinBtn');
+joinBtn.addEventListener('click',()=>{
+  const name=document.getElementById('teamName').value.trim();
+  if(name.length===0) return alert("Indtast holdnavn!");
+  const teamRef=db.ref("teams").push();
+  teamRef.set({name:name,buzzed:false});
+  alert("Du er nu tilmeldt: "+name+"! Vent på spillet.");
+});
+</script>
+</body>
+</html>
