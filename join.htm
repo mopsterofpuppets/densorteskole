@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="da">
 <head>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
 <meta charset="UTF-8">
 <title>Join Den Sorte Skole</title>
 <style>
@@ -8,6 +11,8 @@ body{font-family:sans-serif;text-align:center;padding:20px;}
 input{padding:10px;font-size:18px;width:250px;}
 button{padding:10px 20px;font-size:18px;margin-top:10px;cursor:pointer;}
 </style>
+
+
 </head>
 <body>
 <h2>Velkommen til Den Sorte Skole</h2>
@@ -16,7 +21,7 @@ button{padding:10px 20px;font-size:18px;margin-top:10px;cursor:pointer;}
 <br>
 <button id="joinBtn">Join spillet</button>
 
-<script src="firebase_c.js"></script>
+<script src="firebase_c.js" type="text/javascript"></script>
 <script>
 const joinBtn=document.getElementById('joinBtn');
 joinBtn.addEventListener('click',()=>{
