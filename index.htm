@@ -49,6 +49,7 @@ button {
   margin:20px; border-radius:10px; box-shadow:0 0 15px red;
 }
 button:hover { background:#b30000; }
+#qrCode { margin:20px; }
 </style>
 </head>
 <body>
@@ -77,10 +78,19 @@ db.ref(gameId).set({
 });
 
 // Lav QR-kode til join.htm med spil-ID og korrekt sti
+const qrCanvas = document.getElementById('qrCode');
+const joinUrl = window.location.origin + location.pathname.replace("index.htm","") + 'join.htm?game=' + gameId;
+
 new QRious({
-  element: document.getElementById('qrCode'),
-  value: window.location.origin + location.pathname.replace("index.htm","") + 'join.htm?game=' + gameId,
+  element: qrCanvas,
+  value: joinUrl,
   size: 200
+});
+
+// Klik på QR-kode åbner join.htm i nyt vindue
+qrCanvas.style.cursor = "pointer";
+qrCanvas.addEventListener('click', ()=>{
+  window.open(joinUrl, "_blank");
 });
 
 // Holdliste og dynamisk header
