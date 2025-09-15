@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<title>Venter – Den Sorte Skole</title>
+<link href="https://fonts.googleapis.com/css2?family=Metal+Mania&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="firebase_c.js"></script>
+<style>
+body {
+  margin:0; background:black; color:white;
+  font-family:'Metal Mania', cursive;
+  text-align:center;
+  background:url('background.jpg') no-repeat center center fixed;
+  background-size:cover;
+}
+h1 { font-size:3em; margin:20px; color:#ff0000;
+     text-shadow:
+     0 0 5px #660000,
+     0 0 10px #990000,
+     0 0 20px #cc0000,
+     0 0 30px #ff0000,
+     0 0 40px #ff3300,
+     0 0 50px #ff3300,
+     0 0 60px #ff6600;}
+</style>
+</head>
+<body>
+<h1>Du er nu tilmeldt!</h1>
+<p>Holdnavn: <span id="teamName"></span></p>
+<p>Vent på at spillet starter…</p>
+
+<script>
+document.getElementById('teamName').textContent = localStorage.getItem("teamName");
+const gameId = localStorage.getItem("gameId");
+
+// Redirect når gamemaster starter spil
+db.ref(gameId + "/gameStarted").on('value', snap=>{
+  if(snap.val()===true){
+    window.location.href="buzz.htm";
+  }
+});
+</script>
+</body>
+</html>

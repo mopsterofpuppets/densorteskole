@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<title>Den Sorte Skole – Spilleplade</title>
+<link href="https://fonts.googleapis.com/css2?family=Metal+Mania&display=swap" rel="stylesheet">
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="firebase_c.js"></script>
+
+<style>
+body {
+  margin:0; background:black; color:white;
+  font-family:'Metal Mania', cursive;
+  text-align:center;
+  background:url('background.jpg') no-repeat center center fixed;
+  background-size:cover;
+}
+h1 {
+  font-size:5em; margin:20px 0; color:#ff0000;
+  text-shadow:
+     0 0 5px #660000,
+     0 0 10px #990000,
+     0 0 20px #cc0000,
+     0 0 30px #ff0000,
+     0 0 40px #ff3300,
+     0 0 50px #ff3300,
+     0 0 60px #ff6600;
+}
+ul { list-style:none; padding:0; margin:0; }
+li { margin:5px 0; font-size:1.5em; }
+#board { margin:20px auto; display:grid; grid-template-columns:repeat(5,1fr); gap:10px; max-width:1000px; }
+.category { font-size:1.5em; color:#ffcc00; text-shadow:0 0 10px black; }
+.card { background:rgba(0,0,0,0.85); color:#ff3333; font-size:1.8em; font-weight:bold;
+       display:flex; align-items:center; justify-content:center; height:100px; border:2px solid #660000;
+       cursor:pointer; transition:transform 0.3s, box-shadow 0.3s; }
+.card:hover { transform:scale(1.1); box-shadow:0 0 25px red; }
+.card.used { background:#111; color:#333; cursor:not-allowed; }
+
+#timer { font-size:5em; margin-top:20px; color:#ffcc00; text-shadow:0 0 25px red; }
+.buzzedCard { border:3px solid red; animation: blink 0.6s infinite alternate; }
+.buzzedTeam { color:yellow; font-weight:bold; text-shadow:0 0 15px red; }
+
+button { background:darkred; color:white; font-size:1.2em; padding:10px 20px; border:none;
+         cursor:pointer; margin:10px; border-radius:10px; box-shadow:0 0 15px red; }
+button:hover { background:#b30000; }
+#correctBtn, #wrongBtn { display:none; }
+#currentBuzz { font-size:2em; margin:15px; color:yellow; text-shadow:0 0 15px red; }
+</style>
+</head>
+<body>
+
+<h1>Den Sorte Skole</h1>
+
+<h2>Hold og points</h2>
+<ul id="teamList"></ul>
+
+<div id="currentBuzz"></div>
+<div>
+  <button id="correctBtn">Rigtigt svar</button>
+  <button id="wrongBtn">Forkert svar</button>
+</div>
+
+<div id="board"></div>
+<div id="timer"></div>
+
+<!-- Skjult Spotify player -->
+<iframe id="player" style="display:none;" allow="encrypted-media"></iframe>
+
+<script>
+const urlParams = new URLSearchParams(window.location.search);
+let gameId = urlParams.get('game') || localStorage.getItem("gameId");
+localStorage.setItem("gameId", gameId);
+
+const teamList=document.getElementById('teamList');
+const board=document.getElementById('board');
+const timerEl=document.getElementById('timer');
+const player=document.getElementById('player');
+const correctBtn=document.getElementById('correctBtn');
+const wrongBtn=document.getElementById('wrongBtn');
+const currentBuzz=document.getElementById('currentBuzz');
+
+let timerInterval=null;
+let currentBuzzCard=null;
+let currentQuestionPoints=0;
+let questionOpen=false;
+
+// Holdliste og point
+db.ref(gameId + "/teams").on('value', snapshot=>{
+  teamList.innerHTML="";
+  snapshot.forEach(child=>{
+    const t=child.val();
+    const li=document.createElement('li');
+    li.textContent=`${t.name} — ${t.points || 0} point`;
+    teamList.appendChild(li);
+  });
+});
+
+// Buzz og timer
+db.ref(gameId + "/buzz").on('value', snap=>{
+  const b = snap.val();
+  if(b && b.buzzed){
+    currentBuzz.textContent = "Buzzed: " + b.team;
+    correctBtn.style.display="inline-block";
+    wrongBtn.style.display="inline-block";
+    startTimer(10);
+
+    if(currentBuzzCard) currentBuzzCard.classList.add('buzzedCard');
+
+    document.querySelectorAll('#teamList li').forEach(li=>{
+      if(li.textContent.startsWith(b.team)){
+        li.classList.add('buzzedTeam');
+      } else { li.classList.remove('buzzedTeam'); }
+    });
+  } else {
+    currentBuzz.textContent = "";
+    correctBtn.style.display="none";
+    wrongBtn.style.display="none";
+    clearInterval(timerInterval);
+    timerEl.textContent="";
+    questionOpen = false;
+    if(currentBuzzCard) currentBuzzCard.classList.remove('buzzedCard');
+  }
+});
+
+// Kategorier og point
+const points=[100,200,300,400,666];
+const categories=["Metallica","Iron Maiden","Slayer","Black Sabbath","Judas Priest"];
+const songs={
+  "Metallica":["https://open.spotify.com/embed/track/0","","","",""],
+  "Iron Maiden":["","","","",""],
+  "Slayer":["","","","",""],
+  "Black Sabbath":["","","","",""],
+  "Judas Priest":["","","","",""]
+};
+
+initBoard();
+
+function initBoard(){
+  board.innerHTML='';
+  categories.forEach(cat=>{
+    const h=document.createElement('div'); h.textContent=cat; h.className='category';
+    board.appendChild(h);
+  });
+  points.forEach((p,rowIndex)=>{
+    categories.forEach((cat,colIndex)=>{
+      const card=document.createElement('div');
+      card.className='card'; card.textContent=p;
+      card.addEventListener('click', ()=>{
+        if(!card.classList.contains('used')){
+          card.classList.add('used');
+          currentQuestionPoints=p;
+          questionOpen=true;
+          currentBuzzCard=card;
+          db.ref(gameId + "/questionOpen").set(true);
+          showPlayOverlay(songs[cat][rowIndex]);
+        }
+      });
+      board.appendChild(card);
+    });
+  });
+}
+
+function showPlayOverlay(songUrl){
+  const overlay=document.createElement('div');
+  overlay.style.position="fixed";
+  overlay.style.top=0; overlay.style.left=0;
+  overlay.style.width="100%"; overlay.style.height="100%";
+  overlay.style.background="rgba(0,0,0,0.85)";
+  overlay.style.display="flex";
+  overlay.style.alignItems="center";
+  overlay.style.justifyContent="center";
+  overlay.innerHTML='<button style="font-size:2em;padding:20px 50px;">Play musik</button>';
+  document.body.appendChild(overlay);
+
+  overlay.querySelector('button').addEventListener('click', ()=>{
+    player.src=songUrl;
+    overlay.remove();
+    timerEl.textContent="";
+  });
+}
+
+function startTimer(seconds){
+  clearInterval(timerInterval);
+  let t=seconds;
+  timerEl.textContent=t;
+  timerInterval=setInterval(()=>{
+    t--;
+    timerEl.textContent=t;
+    if(t<=0){ clearInterval(timerInterval); timerEl.textContent=""; }
+  },1000);
+}
+
+correctBtn.addEventListener('click', ()=>{
+  db.ref(gameId + "/buzz").once('value').then(snap=>{
+    const b = snap.val();
+    if(b && b.buzzed){
+      givePoints(b.teamId, currentQuestionPoints);
+      resetBuzz();
+    }
+  });
+});
+
+wrongBtn.addEventListener('click', ()=>{
+  resetBuzz();
+});
+
+function resetBuzz(){
+  db.ref(gameId + "/buzz").set({buzzed:false, team:null, teamId:null});
+  db.ref(gameId + "/buzzLocked").set(false);
+  db.ref(gameId + "/questionOpen").set(false);
+  questionOpen=false;
+  currentBuzz.textContent="";
+  correctBtn.style.display="none";
+  wrongBtn.style.display="none";
+  timerEl.textContent="";
+  if(currentBuzzCard) currentBuzzCard.classList.remove('buzzedCard');
+}
+
+function givePoints(teamId, points){
+  const teamRef = db.ref(`${gameId}/teams/${teamId}`);
+  teamRef.once('value').then(snap=>{
+    const oldPoints = snap.val().points || 0;
+    teamRef.update({ points: oldPoints + points });
+  });
+}
+</script>
+</body>
+</html>

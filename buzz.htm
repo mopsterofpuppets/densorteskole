@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<title>Den Sorte Skole – Buzz</title>
+<link href="https://fonts.googleapis.com/css2?family=Metal+Mania&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="firebase_c.js"></script>
+<style>
+body {
+  margin:0; background:black; color:white;
+  font-family:'Metal Mania', cursive;
+  text-align:center;
+  background:url('background.jpg') no-repeat center center fixed;
+  background-size:cover;
+}
+h1 { font-size:4em; margin:20px 0; color:#ff0000;
+     text-shadow:
+     0 0 5px #660000,
+     0 0 10px #990000,
+     0 0 20px #cc0000,
+     0 0 30px #ff0000,
+     0 0 40px #ff3300,
+     0 0 50px #ff3300,
+     0 0 60px #ff6600;}
+#buzzBtn {
+  font-size:3em; padding:20px 50px; margin:50px;
+  background:darkred; color:white; border:none; border-radius:15px;
+  cursor:pointer; box-shadow:0 0 20px red;
+}
+#buzzBtn:hover { background:#b30000; }
+#timer { font-size:5em; margin-top:20px; color:#ffcc00; text-shadow:0 0 25px red; }
+#buzzedTeam { font-size:2em; margin-top:20px; color:yellow; text-shadow:0 0 15px red; }
+</style>
+</head>
+<body>
+
+<h1>Tryk på BUZZ!</h1>
+<button id="buzzBtn">BUZZ</button>
+<div id="timer"></div>
+<div id="buzzedTeam"></div>
+
+<script>
+const buzzBtn=document.getElementById('buzzBtn');
+const timerEl=document.getElementById('timer');
+const buzzedTeamEl=document.getElementById('buzzedTeam');
+
+const teamId = localStorage.getItem("teamId");
+const teamName = localStorage.getItem("teamName");
+const gameId = localStorage.getItem("gameId");
+
+let timerInterval=null;
+
+buzzBtn.addEventListener('click', ()=>{
+  db.ref(gameId + "/questionOpen").once('value').then(openSnap=>{
+    if(!openSnap.val()){
+      alert("Ingen spørgsmål er åbent endnu!");
+      return;
+    }
+    db.ref(gameId + "/buzzLocked").once('value').then(lockSnap=>{
+      if(lockSnap.val()){
+        alert("Et andet hold har allerede buzzed!");
+        return;
+      }
+      db.ref(gameId + "/buzz").set({buzzed:true, team:teamName, teamId:teamId});
+      db.ref(gameId + "/buzzLocked").set(true);
+      buzzBtn.disabled=true;
+    });
+  });
+});
+
+db.ref(gameId + "/buzz").on('value', snap=>{
+  const b=snap.val();
+  if(b && b.buzzed){
+    buzzedTeamEl.textContent="Buzzed: "+b.team;
+    startTimer(10);
+  } else {
+    buzzedTeamEl.textContent="";
+    buzzBtn.disabled=false;
+    clearInterval(timerInterval);
+    timerEl.textContent="";
+  }
+});
+
+function startTimer(seconds){
+  clearInterval(timerInterval);
+  let t=seconds;
+  timerEl.textContent=t;
+  timerInterval=setInterval(()=>{
+    t--;
+    timerEl.textContent=t;
+    if(t<=0){ clearInterval(timerInterval); timerEl.textContent=""; }
+  },1000);
+}
+</script>
+</body>
+</html>
