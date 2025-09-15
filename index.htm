@@ -66,7 +66,7 @@ db.ref(gameId).set({
 // Lav QR-kode til join.htm med spil-ID
 new QRious({
   element: document.getElementById('qrCode'),
-  value: window.location.origin + '/join.htm?game=' + gameId,
+  value: window.location.origin + location.pathname + '/join.htm?game=' + gameId,
   size: 200
 });
 
