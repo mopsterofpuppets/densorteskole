@@ -8,6 +8,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script src="firebase_c.js"></script>
+
 <style>
 body {
   margin:0; background:black; color:white;
@@ -15,7 +16,19 @@ body {
   text-align:center;
   background:url('background.jpg') no-repeat center center fixed;
   background-size:cover;
+  position: relative;
 }
+
+/* Dark overlay */
+body::before {
+  content: "";
+  position: fixed;
+  top:0; left:0;
+  width:100%; height:100%;
+  background: rgba(0,0,0,0.6); /* 60% mørkt overlay */
+  z-index: -1; 
+}
+
 h1 {
   font-size:5em; margin:20px 0; color:#ff0000;
   text-shadow:
@@ -28,7 +41,7 @@ h1 {
      0 0 60px #ff6600;
 }
 h2 { font-size:2em; margin-top:10px; }
-ul { list-style:none; padding:0; }
+ul { list-style:none; padding:0; margin:0; }
 li { margin:5px 0; font-size:1.5em; }
 button {
   background:darkred; color:white; font-size:1.5em;
@@ -44,7 +57,7 @@ button:hover { background:#b30000; }
 <canvas id="qrCode"></canvas>
 <p>Scan QR-koden for at tilmelde et hold</p>
 
-<h2>Hold</h2>
+<h2 id="holdHeader" style="display:none;">Hold</h2>
 <ul id="teamList"></ul>
 
 <button id="startGameBtn">Start spil</button>
@@ -63,23 +76,30 @@ db.ref(gameId).set({
   questionOpen: false
 });
 
-// Lav QR-kode til join.htm med spil-ID
+// Lav QR-kode til join.htm med spil-ID og korrekt sti
 new QRious({
   element: document.getElementById('qrCode'),
-  value: window.location.origin + location.pathname + '/join.htm?game=' + gameId,
+  value: window.location.origin + location.pathname.replace("index.htm","") + 'join.htm?game=' + gameId,
   size: 200
 });
 
-// Holdliste
-const teamList=document.getElementById('teamList');
+// Holdliste og dynamisk header
+const teamList = document.getElementById('teamList');
+const holdHeader = document.getElementById('holdHeader');
+
 db.ref(gameId + "/teams").on('value', snap=>{
   teamList.innerHTML='';
-  snap.forEach(child=>{
-    const t=child.val();
-    const li=document.createElement('li');
-    li.textContent=`${t.name} — ${t.points||0} point`;
-    teamList.appendChild(li);
-  });
+  if(snap.exists()){
+    holdHeader.style.display="block";
+    snap.forEach(child=>{
+      const t = child.val();
+      const li = document.createElement('li');
+      li.textContent = `${t.name} — ${t.points || 0} point`;
+      teamList.appendChild(li);
+    });
+  } else {
+    holdHeader.style.display="none";
+  }
 });
 
 // Start spil → redirect til game.htm
