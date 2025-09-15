@@ -46,19 +46,30 @@ button:hover { background:#b30000; }
 // Hent gameID fra URL
 const urlParams = new URLSearchParams(window.location.search);
 const gameId = urlParams.get('game');
-localStorage.setItem("gameId", gameId);
+
+if(!gameId){
+  alert("Fejl: gameId ikke fundet i URL!");
+} else {
+  localStorage.setItem("gameId", gameId);
+}
 
 const joinBtn=document.getElementById('joinBtn');
+
 joinBtn.addEventListener('click', ()=>{
   const name = document.getElementById('teamName').value.trim();
   if(!name) return alert("Indtast holdnavn!");
-  
+
   const teamRef = db.ref(gameId + "/teams").push();
-  teamRef.set({ name:name, points:0, buzzed:false }).then(()=>{
-    localStorage.setItem("teamId", teamRef.key);
-    localStorage.setItem("teamName", name);
-    window.location.href="waiting.htm?game=" + gameId;
-  });
+  teamRef.set({ name:name, points:0, buzzed:false })
+    .then(()=>{
+      localStorage.setItem("teamId", teamRef.key);
+      localStorage.setItem("teamName", name);
+      window.location.href="waiting.htm?game=" + gameId;
+    })
+    .catch(err=>{
+      alert("Fejl ved tilmelding: " + err);
+      console.error("Firebase fejl:", err);
+    });
 });
 </script>
 </body>
