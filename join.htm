@@ -47,7 +47,7 @@ button:active {
 <body>
 <div class="container">
   <h1>Den Sorte Skole</h1>
-  <input type="text" id="teamName" style="width:400px" placeholder="Indtast holdnavn fra helvede" maxlength="20">
+  <input type="text" id="teamName" style="width:500px" placeholder="Indtast holdnavn fra helvede" maxlength="20">
   <button id="joinBtn">Join</button>
   <div id="errorMsg" style="margin-top:10px;color:red;"></div>
 </div>
@@ -92,6 +92,8 @@ joinBtn.addEventListener("click", ()=>{
   const avatarIndex = teamId.charCodeAt(teamId.length-1) % avatars.length;
   const avatar = avatars[avatarIndex];
 
+  console.log("Gemmer hold i FB");
+ 
   // Gem hold i Firebase
   teamsRef.child(teamId).set({
     name: name,
