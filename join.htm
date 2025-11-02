@@ -47,7 +47,7 @@ button:active {
 <body>
 <div class="container">
   <h1>Den Sorte Skole</h1>
-  <input type="text" id="teamName" style="width:400px" placeholder="Indtast holdnavn fra helvede" maxlength="25">
+  <input type="text" id="teamName" style="width:400px" placeholder="Indtast holdnavn fra helvede" maxlength="20">
   <button id="joinBtn">Join</button>
   <div id="errorMsg" style="margin-top:10px;color:red;"></div>
 </div>
@@ -103,7 +103,14 @@ joinBtn.addEventListener("click", ()=>{
       errorMsg.textContent = "Kunne ikke gemme hold: " + err;
     } else {
       // Redirect til waiting med gameId og teamId
-      window.location.href = "/waiting.htm?game=${gameId}&team=${teamId}";
+      console.log("Redirecting to wait page");
+
+    const base = window.location.origin.startsWith("file:")
+      ? window.location.pathname.replace(/\/[^/]*$/, "/")  // lokale filer
+      : window.location.origin + "/";                      // webserver
+
+    window.location.href = `${base}waiting.htm?game=${gameId}&team=${teamId}`;
+
     }
   });
 });
