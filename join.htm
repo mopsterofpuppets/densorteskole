@@ -100,21 +100,29 @@ joinBtn.addEventListener("click", ()=>{
     avatar: avatar,
     points: 0,
     buzzed: false
-  }, (err)=>{
-    if(err){
-      errorMsg.textContent = "Kunne ikke gemme hold: " + err;
-    } else {
-      // Redirect til waiting med gameId og teamId
-      console.log("Redirecting to wait page");
+  }).then( () => {
+    console.log("Redirecting to wait page");
 
-    const base = window.location.origin.startsWith("file:")
-      ? window.location.pathname.replace(/\/[^/]*$/, "/")  // lokale filer
-      : window.location.origin + "/";                      // webserver
+    // bygg korrekt base uanset om vi kører i en subfolde
+    const origin = window.location.origin;
+    const path = window.location.pathname;
+  
+    // fjern sidste segment (filnavn) og behold resten af stien
+    const folder = path.replace(/\/[^/]*$/, "/");
 
-    window.location.href = `${base}waiting.htm?game=${gameId}&team=${teamId}`;
+    // sammensæt URL (brug origin hvis ikke file:)
+    const base = origin.startsWith("file:") ? folder : origin + folder;
 
-    }
+    const redirectUrl = `${base}waiting.htm?game=${encodeURIComponent(gameId)}&team=${encodeURIComponent(teamId)}`;
+
+    // lille timeout i nogle mobile browsere hjælper
+    setTimeout(()=> window.location.href = redirectUrl, 50);
+  })
+  .catch(err => {
+    errorMsg.textContent = "Kunne ikke gemme hold";
+    console.log(err && err.message ? err.message : err);
   });
+
 });
 </script>
 </body>
