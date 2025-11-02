@@ -42,6 +42,7 @@ const board = document.getElementById('board');
 const scoreboard = document.getElementById('scoreboard');
 const timerEl = document.getElementById('timer');
 const currentBuzz = document.getElementById('currentBuzz');
+const previousPoints = {}; // gemmer tidligere point
 
 let timerInterval = null;
 let currentBuzzCard = null;
@@ -71,6 +72,13 @@ db.ref(gameId + "/teams").on('value', snapshot => {
     const text = document.createElement('span');
     text.textContent = `${t.name} — ${t.points || 0} point`;
     li.appendChild(text);
+
+    // 🔹 puls hvis point stiger
+    if (previousPoints[child.key] !== undefined && t.points > previousPoints[child.key]) {
+      text.classList.add("pulse");
+      setTimeout(() => text.classList.remove("pulse"), 600);
+    }
+    previousPoints[child.key] = t.points;
 
     teamList.appendChild(li);
   });
@@ -253,6 +261,7 @@ function resetBuzz(keepQuestionOpen = false){
   });
 }
 
+/*
 function givePoints(teamId, points){
   const teamRef = db.ref(`${gameId}/teams/${teamId}`);
   db.ref(`${gameId}/correctTeams/${teamId}`).set(true);
@@ -260,7 +269,7 @@ function givePoints(teamId, points){
     const oldPoints = snap.val().points || 0;
     teamRef.update({ points: oldPoints + points });
   });
-}
+}*/
 
 // Lyt efter gameOver
 db.ref(gameId + "/gameOver").on('value', snap => {

@@ -87,10 +87,14 @@ const gameStartedRef = db.ref(gameId + "/gameStarted");
 const teamRowEl = document.getElementById("teamRow");
 const startBtn = document.getElementById("startBtn");
 
-// Generer QR med gameId (teamId tilføjes ved join)
+// Fastsæt join-siden uanset om index.htm er skrevet eller ej
+let basePath = location.pathname;
+if(basePath.endsWith("/")) basePath += "join.htm"; // hvis root, tilføj join.htm
+else basePath = basePath.replace(/index\.htm(l)?$/,"join.htm"); // erstatter index.htm eller index.html
+
 const qr = new QRious({
   element: document.getElementById('qrCode'),
-  value: window.location.origin + location.pathname.replace("index.htm","join.htm") + "?game=" + gameId,
+  value: window.location.origin + basePath + "?game=" + gameId,
   size: 200
 });
 
