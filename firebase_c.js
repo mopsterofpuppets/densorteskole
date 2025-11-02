@@ -4,6 +4,7 @@
     apiKey: "AIzaSyD3Hud19A9moYfTE-Dxl02aXNYuGZsnrII",
     authDomain: "densorteskole-384e7.firebaseapp.com",
     projectId: "densorteskole-384e7",
+    databaseURL: "https://densorteskole-384e7-default-rtdb.europe-west1.firebasedatabase.app",
     storageBucket: "densorteskole-384e7.firebasestorage.app",
     messagingSenderId: "760555159403",
     appId: "1:760555159403:web:6447a6f6c28b3a6034562e",
