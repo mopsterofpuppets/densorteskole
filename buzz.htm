@@ -2,97 +2,205 @@
 <html lang="da">
 <head>
 <meta charset="UTF-8">
-<title>Den Sorte Skole – Buzz</title>
-<link href="https://fonts.googleapis.com/css2?family=Metal+Mania&display=swap" rel="stylesheet">
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<title>Den Sorte Skole - Buzz</title>
+<link href="https://fonts.googleapis.com/css2?family=Metal+Mania" rel="stylesheet">
+<link href="style.css" rel="stylesheet">
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 <script src="firebase_c.js"></script>
-<style>
-body {
-  margin:0; background:black; color:white;
-  font-family:'Metal Mania', cursive;
-  text-align:center;
-  background:url('background.jpg') no-repeat center center fixed;
-  background-size:cover;
-}
-h1 { font-size:4em; margin:20px 0; color:#ff0000;
-     text-shadow:
-     0 0 5px #660000,
-     0 0 10px #990000,
-     0 0 20px #cc0000,
-     0 0 30px #ff0000,
-     0 0 40px #ff3300,
-     0 0 50px #ff3300,
-     0 0 60px #ff6600;}
-#buzzBtn {
-  font-size:3em; padding:20px 50px; margin:50px;
-  background:darkred; color:white; border:none; border-radius:15px;
-  cursor:pointer; box-shadow:0 0 20px red;
-}
-#buzzBtn:hover { background:#b30000; }
-#timer { font-size:5em; margin-top:20px; color:#ffcc00; text-shadow:0 0 25px red; }
-#buzzedTeam { font-size:2em; margin-top:20px; color:yellow; text-shadow:0 0 15px red; }
-</style>
 </head>
 <body>
+<div class="container" style="position:relative; z-index:1; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh;">
+  <img id="avatar" class="avatar" src="" style="width:160px;height:160px;border-radius:12px;margin-bottom:20px;">
+  <div id="teamName" style="font-size:1.8em; margin-bottom:18px;"></div>
 
-<h1>Tryk på BUZZ!</h1>
-<button id="buzzBtn">BUZZ</button>
-<div id="timer"></div>
-<div id="buzzedTeam"></div>
+  <button id="buzzBtn" class="disabled" aria-label="Buzz" title="Buzz" disabled>
+    <span id="btnTimer"></span>
+    <span id="btnDead" style="display:none;">💀</span>
+    <span id="btnWin" style="display:none;">✊</span>
+  </button>
+</div>
+
+<audio id="buzzSound" src="ping.mp3" preload="auto"></audio>
 
 <script>
-const buzzBtn=document.getElementById('buzzBtn');
-const timerEl=document.getElementById('timer');
-const buzzedTeamEl=document.getElementById('buzzedTeam');
+const urlParams = new URLSearchParams(window.location.search);
+const gameId = urlParams.get("game");
+const teamId = urlParams.get("team");
 
-const teamId = localStorage.getItem("teamId");
-const teamName = localStorage.getItem("teamName");
-const gameId = localStorage.getItem("gameId");
+// refs
+const teamsRef = db.ref(`${gameId}/teams/${teamId}`);
+const questionRef = db.ref(`${gameId}/questionOpen`);
+const buzzRef = db.ref(`${gameId}/buzz`);
+const disqualifiedTeamRef = db.ref(`${gameId}/disqualifiedTeams/${teamId}`);
+const correctRef = db.ref(`${gameId}/correctTeams/${teamId}`);
 
-let timerInterval=null;
+const buzzBtn = document.getElementById("buzzBtn");
+const avatarImg = document.getElementById("avatar");
+const teamNameEl = document.getElementById("teamName");
+const btnTimer = document.getElementById("btnTimer");
+const btnDead = document.getElementById("btnDead");
+const btnWin = document.getElementById("btnWin");
+const buzzSound = document.getElementById("buzzSound");
 
-buzzBtn.addEventListener('click', ()=>{
-  db.ref(gameId + "/questionOpen").once('value').then(openSnap=>{
-    if(!openSnap.val()){
-      alert("Ingen spørgsmål er åbent endnu!");
-      return;
+let countdownInterval = null;
+const COUNTDOWN_SECONDS = 10;
+
+// Hjælpere
+function enableButtonAsReady(){
+  buzzBtn.disabled = false;
+  buzzBtn.classList.remove('disabled','disqualified','buzzed','timerActive');
+  btnTimer.style.display = '';
+  btnDead.style.display = 'none';
+  buzzBtn.style.animation = '';
+}
+function setDisabledForOther(){
+  if(buzzBtn.classList.contains('disqualified')) return;
+  buzzBtn.disabled = true;
+  buzzBtn.classList.remove('buzzed','timerActive');
+  buzzBtn.classList.add('disabled');
+  btnTimer.style.display = '';
+}
+function setBuzzedState(){
+  buzzBtn.disabled = true;
+  buzzBtn.classList.remove('disabled','disqualified');
+  buzzBtn.classList.add('buzzed','timerActive');
+  btnTimer.style.display = 'flex';
+}
+function setDisqualifiedState(){
+  buzzBtn.disabled = true;
+  buzzBtn.classList.remove('disabled','buzzed','timerActive');
+  buzzBtn.classList.add('disqualified');
+  btnDead.style.display = 'flex';
+  btnTimer.style.display = 'none';
+  buzzBtn.style.animation = '';
+}
+
+// Countdown
+function startCountdown(){
+  clearInterval(countdownInterval);
+  let remaining = COUNTDOWN_SECONDS;
+  btnTimer.textContent = remaining;
+  countdownInterval = setInterval(()=>{
+    remaining--;
+    if(remaining <= 0){
+      clearInterval(countdownInterval);
+      btnTimer.textContent = '';
+      buzzBtn.classList.remove('timerActive');
+    } else {
+      btnTimer.textContent = remaining;
     }
-    db.ref(gameId + "/buzzLocked").once('value').then(lockSnap=>{
-      if(lockSnap.val()){
-        alert("Et andet hold har allerede buzzed!");
-        return;
-      }
-      db.ref(gameId + "/buzz").set({buzzed:true, team:teamName, teamId:teamId});
-      db.ref(gameId + "/buzzLocked").set(true);
-      buzzBtn.disabled=true;
-    });
-  });
-});
+  },1000);
+}
+function stopCountdown(){
+  clearInterval(countdownInterval);
+  btnTimer.textContent = '';
+  buzzBtn.classList.remove('timerActive');
+}
 
-db.ref(gameId + "/buzz").on('value', snap=>{
-  const b=snap.val();
-  if(b && b.buzzed){
-    buzzedTeamEl.textContent="Buzzed: "+b.team;
-    startTimer(10);
-  } else {
-    buzzedTeamEl.textContent="";
-    buzzBtn.disabled=false;
-    clearInterval(timerInterval);
-    timerEl.textContent="";
+// Load team info
+teamsRef.on('value', snap=>{
+  const t = snap.val();
+  if(t){
+    if(t.avatar) avatarImg.src = t.avatar;
+    teamNameEl.textContent = t.name || "";
   }
 });
 
-function startTimer(seconds){
-  clearInterval(timerInterval);
-  let t=seconds;
-  timerEl.textContent=t;
-  timerInterval=setInterval(()=>{
-    t--;
-    timerEl.textContent=t;
-    if(t<=0){ clearInterval(timerInterval); timerEl.textContent=""; }
-  },1000);
-}
+// Lyt til questionOpen
+questionRef.on('value', snap=>{
+  const open = !!snap.val();
+  if(!open){
+    buzzBtn.disabled = true;
+    buzzBtn.classList.remove('buzzed','timerActive');
+    buzzBtn.classList.add('disabled');
+    stopCountdown();
+    return;
+  }
+  disqualifiedTeamRef.once('value').then(dsnap=>{
+    if(dsnap.val()){
+      setDisqualifiedState();
+    } else {
+      buzzRef.once('value').then(bsnap=>{
+        const b = bsnap.val();
+        if(b && b.buzzed){
+          if(b.teamId === teamId){
+            setBuzzedState();
+            startCountdown();
+            try{ buzzSound.currentTime=0; buzzSound.play().catch(()=>{}); }catch(e){}
+          } else {
+            setDisabledForOther();
+            stopCountdown();
+          }
+        } else {
+          enableButtonAsReady();
+          stopCountdown();
+        }
+      });
+    }
+  });
+});
+
+// Lyt til disqualified flag
+disqualifiedTeamRef.on('value', snap=>{
+  if(snap.val()){
+    setDisqualifiedState();
+    stopCountdown();
+  }
+});
+
+// Lyt til korrekt svar
+correctRef.on('value', snap=>{
+  if(snap.val()){
+    console.log("Sætter vindersymbol");
+    btnWin.style.display = 'inline';
+  } else {
+    console.log("Fjerner vindersymbol");
+    btnWin.style.display = 'none';
+  }
+});
+
+// Lyt til buzzRef
+buzzRef.on('value', snap => {
+  const b = snap.val();
+  if(b && b.buzzed){
+    if(b.teamId === teamId){
+      setBuzzedState();
+      startCountdown();
+      try{ buzzSound.currentTime=0; buzzSound.play().catch(()=>{}); }catch(e){}
+    } else {
+      if(!buzzBtn.classList.contains('disqualified')){
+        setDisabledForOther();
+        stopCountdown();
+      }
+    }
+  } else {
+    // Ingen buzz aktiv → re-enable hvis ikke disket
+    disqualifiedTeamRef.once('value').then(dsnap=>{
+      if(!dsnap.val()){
+        enableButtonAsReady();
+      }
+    });
+  }
+});
+
+
+// Klik på buzz-knappen
+buzzBtn.addEventListener('click', ()=>{
+  questionRef.once('value').then(qsnap=>{
+    if(!qsnap.val()) return;
+    disqualifiedTeamRef.once('value').then(dsnap=>{
+      if(dsnap.val()) return;
+      buzzRef.transaction(current=>{
+        if(!current || !current.buzzed){
+          return { buzzed:true, teamId: teamId, ts: Date.now() };
+        }
+        return;
+      }, (err)=>{ if(err) console.error(err); });
+    });
+  });
+});
 </script>
 </body>
 </html>

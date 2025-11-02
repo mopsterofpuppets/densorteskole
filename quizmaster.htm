@@ -15,21 +15,30 @@
 
 <h1>Den Sorte Skole</h1>
 
-<div class="score" id="scoreboard">
+<div class="score">
   <h2>Dødsstillingen fra helvede</h2>
   <ul id="teamList"></ul>
 </div>
 
-<div id="board"></div>
+<div id="board" style="display:none"></div>
 <div id="timer"></div>
 
 <div id="currentBuzz"></div>
+<div id="answerDisplay" style="font-size:1.5em; margin-top:10px; color:#ffcc00;"></div> <!-- 🟡 nyt felt til svar -->
 
-<!-- Game Over Sektion -->
-<div id="gameOverScreen" style="display:none; text-align:center; margin-top:50px;">
-  <h2 style="font-size:3em; color:#ffcc00;">Spillet er slut!</h2>
-  <div id="winningTeam" style="font-size:2.5em; margin:20px 0;"></div>
-  <div id="teamRanking" style="margin-top:30px;"></div>
+<div id="controlButtons">
+  <button id="correctBtn">Oh yeah</button>
+  <button id="wrongBtn">Fucking forkert</button>
+</div>
+
+<!-- Spotify player er nu altid synlig -->
+<iframe id="player" allow="encrypted-media" width="600" height="200" style="border:none;"></iframe>
+
+<!-- Afslut spil-knap -->
+<div style="margin-top:20px; text-align:center;">
+  <button id="endGameBtn" style="font-size:1.2em; padding:10px 20px; background:#ff4444; color:white; border:none; border-radius:5px; cursor:pointer;">
+    Afslut spil
+  </button>
 </div>
 
 <script>
@@ -39,13 +48,18 @@ localStorage.setItem("gameId", gameId);
 
 const teamList = document.getElementById('teamList');
 const board = document.getElementById('board');
-const scoreboard = document.getElementById('scoreboard');
 const timerEl = document.getElementById('timer');
+const player = document.getElementById('player');
+const correctBtn = document.getElementById('correctBtn');
+const wrongBtn = document.getElementById('wrongBtn');
 const currentBuzz = document.getElementById('currentBuzz');
+const answerDisplay = document.getElementById('answerDisplay'); // 🟡 nyt felt
+const endGameBtn = document.getElementById('endGameBtn');
 
 let timerInterval = null;
 let currentBuzzCard = null;
 let currentQuestionPoints = 0;
+let currentCorrectAnswer = null; // 🟡 husk svaret
 let questionOpen = false;
 let timerOnExpireCallback = null;
 
@@ -76,29 +90,44 @@ db.ref(gameId + "/teams").on('value', snapshot => {
   });
 });
 
-// Buzz og timer, inkl. avatar fremhævning
+endGameBtn.addEventListener('click', () => {
+  if(confirm("Er du sikker på, at du vil afslutte spillet?")) {
+    db.ref(gameId + "/gameOver").set(true)
+      .then(() => {
+        alert("Spillet er nu afsluttet.");
+      })
+      .catch(err => {
+        console.error("Fejl ved afslutning af spil:", err);
+      });
+  }
+});
+
+// Buzz og timer
 db.ref(gameId + "/buzz").on('value', snap => {
   const b = snap.val();
-  if(b && b.buzzed){
+  if (b && b.buzzed) {
+    correctBtn.style.display = "inline-block";
+    wrongBtn.style.display = "inline-block";
 
-    // Start 10s timer FOR SVAR – når den udløber markerer vi automatisk forkert
-    startTimer(10, ()=>{
-      // onExpire: marker hold som disqualified (hvis stadig det samme buzz)
-      db.ref(gameId + "/buzz").once('value').then(snap2=>{
+    // 🟡 vis det korrekte svar, når nogen buzzer
+    if (currentCorrectAnswer) {
+      answerDisplay.textContent = "Rigtigt svar: " + currentCorrectAnswer;
+    }
+
+    startTimer(10, () => {
+      db.ref(gameId + "/buzz").once('value').then(snap2 => {
         const current = snap2.val();
-        if(current && current.buzzed && current.teamId){
+        if (current && current.buzzed && current.teamId) {
           db.ref(`${gameId}/disqualifiedTeams/${current.teamId}`).set(true);
-          // frigiv buzz men behold spørgsmålet åbent så andre kan buzz
-          resetBuzz(true); // CHANGED: keep questionOpen true
+          resetBuzz(true);
         }
       });
     });
 
-    if(currentBuzzCard) currentBuzzCard.classList.add('buzzedCard');
+    if (currentBuzzCard) currentBuzzCard.classList.add('buzzedCard');
 
-    // Fremhæv avatar på buzzet hold
-    document.querySelectorAll('#teamList img').forEach(avatar=>{
-      if(avatar.dataset.teamId === b.teamId){
+    document.querySelectorAll('#teamList img').forEach(avatar => {
+      if (avatar.dataset.teamId === b.teamId) {
         avatar.classList.add('buzzed');
         avatar.classList.remove('disabled','disqualified');
       } else {
@@ -107,10 +136,13 @@ db.ref(gameId + "/buzz").on('value', snap => {
     });
   } else {
     currentBuzz.textContent = "";
+    correctBtn.style.display = "none";
+    wrongBtn.style.display = "none";
     clearInterval(timerInterval);
     timerEl.textContent = "";
     questionOpen = false;
-    if(currentBuzzCard) currentBuzzCard.classList.remove('buzzedCard');
+    answerDisplay.textContent = ""; // 🟡 fjern svaret igen
+    if (currentBuzzCard) currentBuzzCard.classList.remove('buzzedCard');
 
     document.querySelectorAll('#teamList img').forEach(img => {
       img.classList.remove('buzzed','disabled');
@@ -118,11 +150,11 @@ db.ref(gameId + "/buzz").on('value', snap => {
   }
 });
 
-// Track disqualified teams
+// Disqualified teams
 db.ref(gameId + "/disqualifiedTeams").on('value', snap => {
   const dq = snap.val() || {};
-  document.querySelectorAll('#teamList img').forEach(img=>{
-    if(dq[img.dataset.teamId]){
+  document.querySelectorAll('#teamList img').forEach(img => {
+    if (dq[img.dataset.teamId]) {
       img.classList.add('disqualified');
       img.classList.remove('buzzed','disabled');
     } else {
@@ -131,13 +163,11 @@ db.ref(gameId + "/disqualifiedTeams").on('value', snap => {
   });
 });
 
-// Initialiser spillepladen med persistence
 initBoard();
 
 function initBoard(){
   board.innerHTML='';
 
-  // Tilføj kategorier
   categories.forEach(cat=>{
     const h = document.createElement('div'); 
     h.textContent = cat; 
@@ -145,7 +175,6 @@ function initBoard(){
     board.appendChild(h);
   });
 
-  // Hent board-status fra databasen
   db.ref(`${gameId}/board`).once('value').then(snapshot => {
     const boardData = snapshot.val() || {};
 
@@ -160,42 +189,32 @@ function initBoard(){
         inner.appendChild(front); inner.appendChild(back);
         card.appendChild(inner);
 
-        // Hvis kortet allerede er brugt i databasen, markér det
-        if(boardData[cat] && boardData[cat][rowIndex] && boardData[cat][rowIndex].used){
+        if (boardData[cat] && boardData[cat][rowIndex] && boardData[cat][rowIndex].used) {
           card.classList.add('used');
         }
 
         card.addEventListener('click', ()=>{
-          if(!card.classList.contains('used')){
+          if (!card.classList.contains('used')) {
             card.classList.add('used');
-            currentQuestionPoints=p;
-            questionOpen=true;
-            currentBuzzCard=card;
+            currentQuestionPoints = p;
+            questionOpen = true;
+            currentBuzzCard = card;
 
-            // CHANGED: Før vi åbner for buzzere, fjernes tidligere disqualified hold og vinder-ikon (nyt spørgsmål)
             db.ref(`${gameId}/disqualifiedTeams`).remove();
             db.ref(`${gameId}/correctTeams`).remove();
 
-            // Luk for svar øjeblikkeligt i DB, så buzzere ikke kan trykke i det lille splitsekund.
             db.ref(gameId + "/questionOpen").set(false);
-
-            // Åbn først 1 sekund efter – sker i DB så alle klienter får samme timing. (punkt 1)
             setTimeout(()=> {
               db.ref(gameId + "/questionOpen").set(true);
             }, 1000);
 
             const songData = songs[cat][rowIndex];
             const link = typeof songData === "string" ? songData : songData.spotify;
-            const correctAnswer = typeof songData === "string" ? null : songData.answer;
+            currentCorrectAnswer = typeof songData === "string" ? null : songData.answer; // 🟡 gem svaret
 
-            db.ref(gameId + "/currentQuestion").set({
-  		category: cat,
-		points: p,
- 		answer: correctAnswer,
-  		songUrl: link
-	    });
+            // Afspil direkte – Spotify-player er nu synlig
+            player.src = makeSpotifyEmbedUrl(link);
 
-            // Gem kortet som brugt i databasen
             if(!boardData[cat]) boardData[cat] = {};
             boardData[cat][rowIndex] = { used:true };
             db.ref(`${gameId}/board`).set(boardData);
@@ -207,11 +226,6 @@ function initBoard(){
   });
 }
 
-/**
- * startTimer(seconds, onExpire)
- * - hvis onExpire angivet kaldes den når timer når 0
- * - viser nedtælling i timerEl
- */
 function startTimer(seconds, onExpire){
   clearInterval(timerInterval);
   timerOnExpireCallback = onExpire || null;
@@ -224,14 +238,12 @@ function startTimer(seconds, onExpire){
       clearInterval(timerInterval);
       timerEl.textContent="";
       if(typeof timerOnExpireCallback === 'function'){
-        // kald callback asynkront for at undgå race med DB-listeners
         try{ timerOnExpireCallback(); } catch(e){ console.error(e); }
       }
     }
   },1000);
 }
 
-// CHANGED: resetBuzz kan nu holde spørgsmålet åbent (keepQuestionOpen=true)
 function resetBuzz(keepQuestionOpen = false){
   db.ref(gameId + "/buzz").set({buzzed:false, team:null, teamId:null});
   db.ref(gameId + "/buzzLocked").set(false);
@@ -239,12 +251,14 @@ function resetBuzz(keepQuestionOpen = false){
     db.ref(gameId + "/questionOpen").set(false);
     questionOpen=false;
   } else {
-    // behold questionOpen true i JS-state og i DB (gamemaster vil normalt allerede have sat questionOpen=true)
     db.ref(gameId + "/questionOpen").set(true);
     db.ref(gameId + "/correctTeams").set(null);
     questionOpen = true;
   }
   currentBuzz.textContent="";
+  answerDisplay.textContent=""; // 🟡 ryd svaret
+  correctBtn.style.display="none";
+  wrongBtn.style.display="none";
   timerEl.textContent="";
   if(currentBuzzCard) currentBuzzCard.classList.remove('buzzedCard');
 
@@ -253,6 +267,26 @@ function resetBuzz(keepQuestionOpen = false){
   });
 }
 
+correctBtn.addEventListener('click', ()=>{
+  db.ref(gameId + "/buzz").once('value').then(snap=>{
+    const b = snap.val();
+    if(b && b.buzzed){
+      givePoints(b.teamId, currentQuestionPoints);
+      resetBuzz(false);
+    }
+  });
+});
+
+wrongBtn.addEventListener('click', ()=>{
+  db.ref(gameId + "/buzz").once('value').then(snap=>{
+    const b = snap.val();
+    if(b && b.buzzed && b.teamId){
+      db.ref(`${gameId}/disqualifiedTeams/${b.teamId}`).set(true);
+    }
+    resetBuzz(true);
+  });
+});
+
 function givePoints(teamId, points){
   const teamRef = db.ref(`${gameId}/teams/${teamId}`);
   db.ref(`${gameId}/correctTeams/${teamId}`).set(true);
@@ -260,52 +294,45 @@ function givePoints(teamId, points){
     const oldPoints = snap.val().points || 0;
     teamRef.update({ points: oldPoints + points });
   });
+  player.src = player.src;
 }
 
-// Lyt efter gameOver
-db.ref(gameId + "/gameOver").on('value', snap => {
-  const over = snap.val();
-  if(over){
-    // Skjul board og timer
-    board.style.display = "none";
-    timerEl.style.display = "none";
-    currentBuzz.style.display = "none";
-    scoreboard.style.display = "none";
+// 🟡 Lyt efter valgt spørgsmål fra game.htm
+db.ref(gameId + "/currentQuestion").on('value', snap => {
+  const q = snap.val();
+  if (q) {
+    // vis kategori, pointværdi og korrekt svar
+    answerDisplay.innerHTML =
+      `<div><strong>Kategori:</strong> ${q.category}</div>` +
+      `<div><strong>Værdi:</strong> ${q.points}</div>` +
+      (q.answer ? `<div><small>Rigtigt svar: ${q.answer}</small></div>` : "");
 
-    // Find vindende hold
-    db.ref(gameId + "/teams").once('value').then(snap => {
-      const teams = [];
-      snap.forEach(child => {
-        const t = child.val();
-        teams.push({name:t.name, points:t.points || 0, avatar:t.avatar});
-      });
-      // Sorter efter points
-      teams.sort((a,b)=>b.points-a.points);
+    currentQuestionPoints = q.points || 0; // 🟡 gem pointværdien lokalt
 
-      // Fremhæv vinder
-      const winner = teams[0];
-      document.getElementById("winningTeam").innerHTML =
-        `<img src="${winner.avatar}" width="80" height="80" style="border-radius:50%; margin-right:10px;">` +
-        `${winner.name} — ${winner.points} point`;
-
-      // Rangliste for øvrige hold
-      const rankingEl = document.getElementById("teamRanking");
-      rankingEl.innerHTML = "";
-      for(let i=1; i<teams.length; i++){
-        const t = teams[i];
-        const div = document.createElement("div");
-        div.style.fontSize = "1.5em";
-        div.style.margin = "5px 0";
-        div.innerHTML = `<img src="${t.avatar}" width="40" height="40" style="border-radius:50%; margin-right:10px;"> ${t.name} — ${t.points} point`;
-        rankingEl.appendChild(div);
-      }
-
-      // Vis Game Over skærm
-      document.getElementById("gameOverScreen").style.display = "block";
-    });
+    // sæt musiklink
+    if (q.songUrl) {
+      player.src = makeSpotifyEmbedUrl(q.songUrl);
+    }
+  } else {
+    answerDisplay.textContent = "";
   }
 });
 
+function makeSpotifyEmbedUrl(url) {
+  if (!url) return "";
+  // hvis det er af typen spotify:track:xxxx
+  if (url.startsWith("spotify:track:")) {
+    const id = url.split(":").pop();
+    return `https://open.spotify.com/embed/track/${id}`;
+  }
+  // hvis det er af typen https://open.spotify.com/track/xxxx
+  if (url.includes("open.spotify.com/track/")) {
+    const id = url.split("track/")[1].split("?")[0];
+    return `https://open.spotify.com/embed/track/${id}`;
+  }
+  // fallback: returnér originalen
+  return url;
+}
 </script>
 </body>
 </html>
