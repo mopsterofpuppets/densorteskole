@@ -20,9 +20,9 @@
 
 input, button {
   font-family: 'Metal Mania', cursive;
-  font-size:1.2em;
-  padding:10px;
-  margin:5px;
+  font-size:2.2em;
+  padding:15px;
+  margin:10px;
   border-radius:10px;
   border:none;
   text-align:center;
@@ -33,7 +33,7 @@ button {
   cursor:pointer;
   box-shadow:0 5px #b32c36;
   transition: all 0.1s ease-in-out;
-  width:120px;
+  width:150px;
 }
 button:active {
   transform: translateY(4px);
@@ -47,7 +47,7 @@ button:active {
 <body>
 <div class="container">
   <h1>Den Sorte Skole</h1>
-  <input type="text" id="teamName" style="width:250px" placeholder="Indtast holdnavn fra helvede" maxlength="25">
+  <input type="text" id="teamName" style="width:400px" placeholder="Indtast holdnavn fra helvede" maxlength="25">
   <button id="joinBtn">Join</button>
   <div id="errorMsg" style="margin-top:10px;color:red;"></div>
 </div>
@@ -73,7 +73,9 @@ const avatars = [
   "https://api.dicebear.com/5.x/identicon/svg?seed=2",
   "https://api.dicebear.com/5.x/identicon/svg?seed=3",
   "https://api.dicebear.com/5.x/identicon/svg?seed=4",
-  "https://api.dicebear.com/5.x/identicon/svg?seed=5"
+  "https://api.dicebear.com/5.x/identicon/svg?seed=5",
+  "https://api.dicebear.com/5.x/identicon/svg?seed=6",
+  "https://api.dicebear.com/5.x/identicon/svg?seed=7"
 ];
 
 joinBtn.addEventListener("click", ()=>{
@@ -101,7 +103,7 @@ joinBtn.addEventListener("click", ()=>{
       errorMsg.textContent = "Kunne ikke gemme hold: " + err;
     } else {
       // Redirect til waiting med gameId og teamId
-      window.location.href = `waiting.htm?game=${gameId}&team=${teamId}`;
+      window.location.href = "/waiting.htm?game=${gameId}&team=${teamId}";
     }
   });
 });
