@@ -51,6 +51,14 @@ button { cursor:pointer; }
 
 <script>
 
+// Spotify Web Playback SDK setup
+const clientId = "f71d4ec597bd4e1094fa14db40250c19";
+const redirectUri = "https://mopsterofpuppets.github.io/densorteskole/qm.htm";
+const scopes = "streaming user-read-email user-read-private user-modify-playback-state user-read-playback-state";
+const authUrl = new URL("https://accounts.spotify.com/authorize")
+
+
+
 const generateRandomString = (length) => {
   const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   const values = crypto.getRandomValues(new Uint8Array(length));
@@ -97,6 +105,11 @@ const getToken = async (code) => {
     throw new Error("Ingen access_token i svar: " + JSON.stringify(data));
   }
 };
+
+const codeVerifier = generateRandomString(64);
+
+// generated in the previous step
+window.localStorage.setItem('code_verifier', codeVerifier);
 
 const urlParams = new URLSearchParams(window.location.search);
 let gameId = urlParams.get('game') || localStorage.getItem("gameId");
@@ -161,16 +174,6 @@ const endGameBtn = document.getElementById('endGameBtn');
 const loginBtn = document.getElementById("loginBtn");
 const playerStatus = document.getElementById("playerStatus");
 
-// Spotify Web Playback SDK setup
-const clientId = "f71d4ec597bd4e1094fa14db40250c19";
-const redirectUri = "https://mopsterofpuppets.github.io/densorteskole/qm.htm";
-const scopes = "streaming user-read-email user-read-private user-modify-playback-state user-read-playback-state";
-const authUrl = new URL("https://accounts.spotify.com/authorize")
-
-const codeVerifier = generateRandomString(64);
-
-// generated in the previous step
-window.localStorage.setItem('code_verifier', codeVerifier);
 
 let accessToken = null;
 let player = null;
