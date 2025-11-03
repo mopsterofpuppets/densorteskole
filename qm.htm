@@ -55,9 +55,51 @@ let gameId = urlParams.get('game') || localStorage.getItem("gameId");
 localStorage.setItem("gameId", gameId);
 
 let code = urlParams.get('code') || localStorage.getItem("code");
-localStorage.setItem("code", code);
 
-console.log("Code = " + code);
+(async () => {
+  const code = urlParams.get('code');
+  if (code && !localStorage.getItem('access_token')) {
+    console.log("Modtog authorization code:", code);
+    try {
+      await getToken(code); // henter og gemmer access_token
+      // Fjern ?code=... fra URL'en
+      const newUrl = window.location.origin + window.location.pathname;
+      window.history.replaceState({}, document.title, newUrl);
+    } catch (err) {
+      console.error("Fejl ved hentning af access token:", err);
+    }
+  }
+
+  accessToken = localStorage.getItem("access_token");
+
+  if (accessToken) {
+    console.log("Access token fundet:", accessToken);
+    loginBtn.style.display = "none";
+    playerStatus.textContent = "🔒 Logget ind med Spotify";
+
+    const script = document.createElement("script");
+    script.src = "https://sdk.scdn.co/spotify-player.js";
+    document.body.appendChild(script);
+
+    window.onSpotifyWebPlaybackSDKReady = () => {
+      player = new Spotify.Player({
+        name: "Den Sorte Skole Player",
+        getOAuthToken: cb => { cb(accessToken); },
+        volume: 0.8
+      });
+
+      player.addListener("ready", ({ device_id }) => {
+        deviceId = device_id;
+        playerStatus.textContent = "🎶 Player klar – enhed: " + deviceId;
+      });
+
+      player.connect();
+    };
+  } else {
+    console.log("Ingen access_token endnu – klik på 'Log ind med Spotify'");
+  }
+})();
+
 
 const teamList = document.getElementById('teamList');
 const board = document.getElementById('board');
@@ -84,9 +126,9 @@ const generateRandomString = (length) => {
 }
 
 function sha256(plain){
-  const encoder = new TextEncoder()
-  const data = encoder.encode(plain)
-  return window.crypto.subtle.digest('SHA-256', data)
+  const encoder = new TextEncoder();
+  const data = encoder.encode(plain);
+  return window.crypto.subtle.digest('SHA-256', data);
 }
 
 const base64encode = (input) => {
@@ -101,19 +143,13 @@ const codeVerifier = generateRandomString(64);
 // generated in the previous step
 window.localStorage.setItem('code_verifier', codeVerifier);
 
-const getToken = async code => {
-
-  // stored in the previous step
+const getToken = async (code) => {
   const codeVerifier = localStorage.getItem('code_verifier');
-
   const url = "https://accounts.spotify.com/api/token";
-  console.log("Fetching access token from " + url);
 
-  const payload = {
+  const res = await fetch(url, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
       client_id: clientId,
       grant_type: 'authorization_code',
@@ -121,15 +157,19 @@ const getToken = async code => {
       redirect_uri: redirectUri,
       code_verifier: codeVerifier,
     }),
+  });
+
+  const data = await res.json();
+  console.log("Token-respons:", data);
+
+  if (data.access_token) {
+    localStorage.setItem('access_token', data.access_token);
+    accessToken = data.access_token;
+    console.log("Access token gemt:", accessToken);
+  } else {
+    throw new Error("Ingen access_token i svar: " + JSON.stringify(data));
   }
-
-  const body = await fetch(url, payload);
-  const response = await body.json();
-
-  localStorage.setItem('access_token', response.access_token);
-  console.log("access_token = " + response.access_token);
-
-}
+};
 
 let accessToken = null;
 let player = null;
@@ -144,13 +184,13 @@ accessToken = localStorage.getItem("access_token");
 // Spotify login-knap
 loginBtn.addEventListener("click", () => {
 
-  const hashed = sha256(codeVerifier);
+  const hashed = await sha256(codeVerifier);
   const codeChallenge = base64encode(hashed);
 
   const params =  {
     response_type: 'code',
     client_id: clientId,
-    scopes,
+    scope: scopes,
     code_challenge_method: 'S256',
     code_challenge: codeChallenge,
     redirect_uri: redirectUri
