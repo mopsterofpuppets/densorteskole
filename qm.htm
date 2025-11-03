@@ -182,7 +182,7 @@ const tokenParams = new URLSearchParams(hash);
 accessToken = localStorage.getItem("access_token");
 
 // Spotify login-knap
-loginBtn.addEventListener("click", () => {
+loginBtn.addEventListener("click", async () => {
 
   const hashed = await sha256(codeVerifier);
   const codeChallenge = base64encode(hashed);
