@@ -118,10 +118,49 @@ const getToken = async (code) => {
 
   if (data.access_token) {
     localStorage.setItem('access_token', data.access_token);
+    if (data.refresh_token) {
+      localStorage.setItem('refresh_token', data.refresh_token);
+    }
     accessToken = data.access_token;
     console.log("Access token gemt:", accessToken);
   } else {
     throw new Error("Ingen access_token i svar: " + JSON.stringify(data));
+  }
+};
+
+const getRefreshToken = async () => {
+  const refreshToken = localStorage.getItem('refresh_token');
+  if (!refreshToken) {
+    console.warn("Ingen refresh_token fundet — brugeren skal logge ind igen");
+    return;
+  }
+
+  const url = "https://accounts.spotify.com/api/token";
+
+  const payload = {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      grant_type: 'refresh_token',
+      refresh_token: refreshToken,
+      client_id: clientId
+    }),
+  };
+
+  const res = await fetch(url, payload);
+  const data = await res.json();
+
+  if (data.access_token) {
+    localStorage.setItem('access_token', data.access_token);
+    accessToken = data.access_token;
+    console.log("🔄 Access token fornyet:", accessToken);
+
+    if (data.refresh_token) {
+      // Spotify udsteder nogle gange et nyt refresh token – gem det!
+      localStorage.setItem('refresh_token', data.refresh_token);
+    }
+  } else {
+    console.error("Kunne ikke forny token:", data);
   }
 };
 
@@ -153,8 +192,21 @@ let code = urlParams.get('code') || localStorage.getItem("code");
 
   accessToken = localStorage.getItem("access_token");
 
+
   if (accessToken) {
+
     console.log("Access token fundet:", accessToken);
+
+    // Tjek token
+    const test = await fetch("https://api.spotify.com/v1/me", {
+      headers: { "Authorization": "Bearer " + accessToken }
+    });
+
+    if (test.status === 401) {
+      console.warn("Access token udløbet – forsøger at forny via refresh_token...");
+      await getRefreshToken();
+    }
+
     loginBtn.style.display = "none";
     playerStatus.textContent = "🔒 Logget ind med Spotify";
 
@@ -435,8 +487,6 @@ function initBoard(){
   });
 }
 
-// Resterende funktioner (timer, buzz reset, korrekt/forkert) forbliver som før
-// … alle funktioner fra quizmaster.htm er bibeholdt
 </script>
 </body>
 </html>
