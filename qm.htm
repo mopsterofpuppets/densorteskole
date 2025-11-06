@@ -264,7 +264,7 @@ loginBtn.addEventListener("click", async () => {
   const params =  {
     response_type: 'code',
     client_id: clientId,
-    scope: scopes,
+    scopes,
     code_challenge_method: 'S256',
     code_challenge: codeChallenge,
     redirect_uri: redirectUri
