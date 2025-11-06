@@ -332,27 +332,35 @@ db.ref(gameId + "/currentQuestion").on('value', snap => {
 
     currentQuestionPoints = q.points || 0;
 
-    // afspil musik via Web Playback SDK
-    if (q.songUrl && player && deviceId) {
-      currentTrackUri = makeSpotifyUri(q.songUrl);
-      fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
-        method: "PUT",
-        body: JSON.stringify({ uris: [currentTrackUri] }),
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${accessToken}`
-        }
-      }).then(() => {
-        player.setVolume(0.8); // sikrer volumen
-        playerStatus.textContent = "▶️ Afspiller nu";
-      }).catch(err => {
-        console.error(err);
-        playerStatus.textContent = "❌ Fejl ved afspilning";
-      });
+// afspil musik via Web Playback SDK
+if (q.songUrl && player && deviceId) {
+  currentTrackUri = makeSpotifyUri(q.songUrl);
+  fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
+    method: "PUT",
+    body: JSON.stringify({ uris: [currentTrackUri] }),
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${accessToken}`
     }
-  } else {
-    answerDisplay.textContent = "";
-  }
+  }).then(() => {
+    console.log("Afspiller");
+    player.setVolume(0.8); // sikrer volumen
+    playerStatus.textContent = "▶️ Afspiller nu";
+  }).catch(err => {
+    console.error(err);
+    playerStatus.textContent = "❌ Fejl ved afspilning";
+  });
+} else {
+  answerDisplay.textContent = "";
+  // detaljeret logging
+  const missing = [];
+  if (!q.songUrl) missing.push("q.songUrl mangler");
+  if (!player) missing.push("player ikke initialiseret");
+  if (!deviceId) missing.push("deviceId ikke klar");
+  console.warn("Musik blev ikke afspillet fordi:", missing.join(", "));
+}
+
+
 });
 
 let playerReady = false;
