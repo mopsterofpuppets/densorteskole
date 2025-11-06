@@ -77,7 +77,6 @@ let accessToken = null;
 let player = null;
 let deviceId = null;
 let currentTrackUri = null;
-let playerReady = false;
 
 const generateRandomString = (length) => {
   const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -236,7 +235,6 @@ let code = urlParams.get('code') || localStorage.getItem("code");
 
       player.addListener("ready", ({ device_id }) => {
         deviceId = device_id;
-        playerReady = true;
         playerStatus.textContent = "🎶 Player klar – enhed: " + deviceId;
         console.log("Player ready - device = " + deviceId);
       });
@@ -277,7 +275,7 @@ db.ref(gameId + "/currentQuestion").on('value', snap => {
 
     currentQuestionPoints = q.points || 0;
 
-    if (q.songUrl && player && deviceId && playerReady) {
+    if (q.songUrl && player) {
       currentTrackUri = makeSpotifyUri(q.songUrl);
       fetch(`https://api.spotify.com/v1/me/player/play`, {
         method: "PUT",
@@ -299,7 +297,6 @@ db.ref(gameId + "/currentQuestion").on('value', snap => {
       const missing = [];
       if (!q.songUrl) missing.push("q.songUrl mangler");
       if (!player) missing.push("player ikke initialiseret");
-      if (!playerReady) missing.push("player ikke klar");
       console.warn("Musik blev ikke afspillet fordi:", missing.join(", "));
     }
 
@@ -457,11 +454,11 @@ function givePoints(teamId, points){
 }
 
 function reduceVolumeForBuzz(){
-  if(player && playerReady) player.setVolume(0.4);
+  if(player) player.setVolume(0.4);
 }
 
 function restoreVolume(){
-  if(player && playerReady) player.setVolume(0.8);
+  if(player) player.setVolume(0.8);
 }
 
 function stopTrack(){
