@@ -232,13 +232,17 @@ let code = urlParams.get('code') || localStorage.getItem("code");
         volume: 0.8
       });
 
+      console.log("Player created");
+
       player.addListener("ready", ({ device_id }) => {
         deviceId = device_id;
         playerReady = true;
         playerStatus.textContent = "🎶 Player klar – enhed: " + deviceId;
+        console.log("Player ready - device = " + deviceId);
       });
 
       player.connect();
+      console.log("Player connected");
     };
   } else {
     console.log("Ingen access_token endnu – klik på 'Log ind med Spotify'");
