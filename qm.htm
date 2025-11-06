@@ -263,31 +263,6 @@ loginBtn.addEventListener("click", async () => {
   window.location.href = authUrl.toString();
 });
 
-if(accessToken){
-  loginBtn.style.display = "none";
-  playerStatus.textContent = "🔒 Logget ind med Spotify";
-
-  const script = document.createElement("script");
-  script.src = "https://sdk.scdn.co/spotify-player.js";
-  document.body.appendChild(script);
-
-  window.onSpotifyWebPlaybackSDKReady = () => {
-    player = new Spotify.Player({
-      name: "Den Sorte Skole Player",
-      getOAuthToken: cb => { cb(accessToken); },
-      volume: 0.8
-    });
-
-    player.addListener("ready", ({ device_id }) => {
-      deviceId = device_id;
-      playerReady = true;
-      playerStatus.textContent = "🎶 Player klar – enhed: " + deviceId;
-    });
-
-    player.connect();
-  };
-}
-
 db.ref(gameId + "/currentQuestion").on('value', snap => {
   const q = snap.val();
   if (q) {
@@ -300,7 +275,7 @@ db.ref(gameId + "/currentQuestion").on('value', snap => {
 
     if (q.songUrl && player && deviceId && playerReady) {
       currentTrackUri = makeSpotifyUri(q.songUrl);
-      fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
+      fetch(`https://api.spotify.com/v1/me/player/play`, {
         method: "PUT",
         body: JSON.stringify({ uris: [currentTrackUri] }),
         headers: {
@@ -320,7 +295,6 @@ db.ref(gameId + "/currentQuestion").on('value', snap => {
       const missing = [];
       if (!q.songUrl) missing.push("q.songUrl mangler");
       if (!player) missing.push("player ikke initialiseret");
-      if (!deviceId) missing.push("deviceId ikke klar");
       if (!playerReady) missing.push("player ikke klar");
       console.warn("Musik blev ikke afspillet fordi:", missing.join(", "));
     }
@@ -487,8 +461,8 @@ function restoreVolume(){
 }
 
 function stopTrack(){
-  if(player && deviceId){
-    fetch(`https://api.spotify.com/v1/me/player/pause?device_id=${deviceId}`, {
+  if(player){
+    fetch(`https://api.spotify.com/v1/me/player/pause`, {
       method:"PUT",
       headers: { "Authorization":`Bearer ${accessToken}` }
     });
