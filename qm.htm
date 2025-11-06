@@ -320,6 +320,41 @@ function playCurrentTrack(){
   }
 }
 
+// 🟡 Lyt efter valgt spørgsmål fra game.htm
+db.ref(gameId + "/currentQuestion").on('value', snap => {
+  const q = snap.val();
+  if (q) {
+    // vis kategori, pointværdi og korrekt svar
+    answerDisplay.innerHTML =
+      `<div><strong>Kategori:</strong> ${q.category}</div>` +
+      `<div><strong>Værdi:</strong> ${q.points}</div>` +
+      (q.answer ? `<div><small>Rigtigt svar: ${q.answer}</small></div>` : "");
+
+    currentQuestionPoints = q.points || 0;
+
+    // afspil musik via Web Playback SDK
+    if (q.songUrl && player && deviceId) {
+      currentTrackUri = makeSpotifyUri(q.songUrl);
+      fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
+        method: "PUT",
+        body: JSON.stringify({ uris: [currentTrackUri] }),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${accessToken}`
+        }
+      }).then(() => {
+        player.setVolume(0.8); // sikrer volumen
+        playerStatus.textContent = "▶️ Afspiller nu";
+      }).catch(err => {
+        console.error(err);
+        playerStatus.textContent = "❌ Fejl ved afspilning";
+      });
+    }
+  } else {
+    answerDisplay.textContent = "";
+  }
+});
+
 let playerReady = false;
 
 window.onSpotifyWebPlaybackSDKReady = () => {
@@ -412,6 +447,7 @@ endGameBtn.addEventListener('click', () => {
 
 // Buzz og timer
 db.ref(gameId + "/buzz").on('value', snap => {
+  console.log("Buzzed");
   const b = snap.val();
   if(b && b.buzzed){
     correctBtn.style.display = "inline-block";
@@ -526,6 +562,60 @@ function initBoard(){
     });
   });
 }
+
+function resetBuzz(keepQuestionOpen = false){
+  db.ref(gameId + "/buzz").set({buzzed:false, team:null, teamId:null});
+  db.ref(gameId + "/buzzLocked").set(false);
+  if(!keepQuestionOpen){
+    db.ref(gameId + "/questionOpen").set(false);
+    questionOpen=false;
+  } else {
+    db.ref(gameId + "/questionOpen").set(true);
+    db.ref(gameId + "/correctTeams").set(null);
+    questionOpen = true;
+  }
+  currentBuzz.textContent="";
+  answerDisplay.textContent=""; // 🟡 ryd svaret
+  correctBtn.style.display="none";
+  wrongBtn.style.display="none";
+  timerEl.textContent="";
+  if(currentBuzzCard) currentBuzzCard.classList.remove('buzzedCard');
+
+  document.querySelectorAll('#teamList img').forEach(img => {
+    img.classList.remove('buzzed','disabled');
+  });
+}
+
+
+correctBtn.addEventListener('click', ()=>{
+  db.ref(gameId + "/buzz").once('value').then(snap=>{
+    const b = snap.val();
+    if(b && b.buzzed){
+      givePoints(b.teamId, currentQuestionPoints);
+      resetBuzz(false);
+    }
+  });
+});
+
+wrongBtn.addEventListener('click', ()=>{
+  db.ref(gameId + "/buzz").once('value').then(snap=>{
+    const b = snap.val();
+    if(b && b.buzzed && b.teamId){
+      db.ref(`${gameId}/disqualifiedTeams/${b.teamId}`).set(true);
+    }
+    resetBuzz(true);
+  });
+});
+
+function givePoints(teamId, points){
+  const teamRef = db.ref(`${gameId}/teams/${teamId}`);
+  db.ref(`${gameId}/correctTeams/${teamId}`).set(true);
+  teamRef.once('value').then(snap=>{
+    const oldPoints = snap.val().points || 0;
+    teamRef.update({ points: oldPoints + points });
+  });
+}
+
 
 </script>
 </body>
