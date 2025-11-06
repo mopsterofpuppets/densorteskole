@@ -57,6 +57,22 @@ const redirectUri = "https://mopsterofpuppets.github.io/densorteskole/qm.htm";
 const scopes = "streaming user-read-email user-read-private user-modify-playback-state user-read-playback-state";
 const authUrl = new URL("https://accounts.spotify.com/authorize");
 
+const teamList = document.getElementById('teamList');
+const board = document.getElementById('board');
+const timerEl = document.getElementById('timer');
+const correctBtn = document.getElementById('correctBtn');
+const wrongBtn = document.getElementById('wrongBtn');
+const currentBuzz = document.getElementById('currentBuzz');
+const answerDisplay = document.getElementById('answerDisplay');
+const endGameBtn = document.getElementById('endGameBtn');
+
+const loginBtn = document.getElementById("loginBtn");
+const playerStatus = document.getElementById("playerStatus");
+
+// Hent access token fra URL hash
+const hash = window.location.hash.substring(1);
+const tokenParams = new URLSearchParams(hash);
+
 let accessToken = null;
 let player = null;
 let deviceId = null;
@@ -165,23 +181,6 @@ let code = urlParams.get('code') || localStorage.getItem("code");
   }
 })();
 
-
-const teamList = document.getElementById('teamList');
-const board = document.getElementById('board');
-const timerEl = document.getElementById('timer');
-const correctBtn = document.getElementById('correctBtn');
-const wrongBtn = document.getElementById('wrongBtn');
-const currentBuzz = document.getElementById('currentBuzz');
-const answerDisplay = document.getElementById('answerDisplay');
-const endGameBtn = document.getElementById('endGameBtn');
-
-const loginBtn = document.getElementById("loginBtn");
-const playerStatus = document.getElementById("playerStatus");
-
-// Hent access token fra URL hash
-const hash = window.location.hash.substring(1);
-const tokenParams = new URLSearchParams(hash);
-accessToken = localStorage.getItem("access_token");
 
 // Spotify login-knap
 loginBtn.addEventListener("click", async () => {
