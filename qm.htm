@@ -241,7 +241,7 @@ let code = urlParams.get('code') || localStorage.getItem("code");
         console.log("Player ready - device = " + deviceId);
       });
 
-      player.connect();
+      player.connect().then(success => console.log("Player connect result:", success));
       console.log("Player connected");
     };
   } else {
