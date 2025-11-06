@@ -306,25 +306,44 @@ function playCurrentTrack(){
     fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
       method:"PUT",
       body: JSON.stringify({ uris: [currentTrackUri] }),
-      headers: { "Content-Type":"application/json", "Authorization":`Bearer ${accessToken}` }
+      headers: { 
+        "Content-Type":"application/json", 
+        "Authorization":`Bearer ${accessToken}` 
+      }
     }).then(()=>{
       if(player) player.setVolume(0.8);
       playerStatus.textContent = "▶️ Afspiller nu";
     }).catch(err=>{
-      console.error(err);
+      console.error("Fejl ved afspilning:", err);
       playerStatus.textContent = "❌ Fejl ved afspilning";
     });
   }
 }
 
-// Halver volumen når hold buzzer
+let playerReady = false;
+
+window.onSpotifyWebPlaybackSDKReady = () => {
+  player = new Spotify.Player({
+    name: "Den Sorte Skole Player",
+    getOAuthToken: cb => { cb(accessToken); },
+    volume: 0.8
+  });
+
+  player.addListener("ready", ({ device_id }) => {
+    deviceId = device_id;
+    playerStatus.textContent = "🎶 Player klar – enhed: " + deviceId;
+    playerReady = true; // ⚡ nu kan vi bruge setVolume
+  });
+
+  player.connect();
+};
+
 function reduceVolumeForBuzz(){
-  if(player) player.setVolume(0.4);
+  if(player && playerReady) player.setVolume(0.4);
 }
 
-// Gendan volumen
 function restoreVolume(){
-  if(player) player.setVolume(0.8);
+  if(player && playerReady) player.setVolume(0.8);
 }
 
 // Stop afspilning
