@@ -224,6 +224,22 @@ let code = urlParams.get('code') || localStorage.getItem("code");
     const script = document.createElement("script");
     script.src = "https://sdk.scdn.co/spotify-player.js";
     document.body.appendChild(script);
+
+    window.onSpotifyWebPlaybackSDKReady = () => {
+      player = new Spotify.Player({
+        name: "Den Sorte Skole Player",
+        getOAuthToken: cb => { cb(accessToken); },
+        volume: 0.8
+      });
+
+      player.addListener("ready", ({ device_id }) => {
+        deviceId = device_id;
+        playerReady = true;
+        playerStatus.textContent = "🎶 Player klar – enhed: " + deviceId;
+      });
+
+      player.connect();
+    };
   } else {
     console.log("Ingen access_token endnu – klik på 'Log ind med Spotify'");
   }
@@ -247,57 +263,31 @@ loginBtn.addEventListener("click", async () => {
   window.location.href = authUrl.toString();
 });
 
-window.onSpotifyWebPlaybackSDKReady = () => {
-  player = new Spotify.Player({
-    name: "Den Sorte Skole Player",
-    getOAuthToken: cb => { cb(accessToken); },
-    volume: 0.8
-  });
+if(accessToken){
+  loginBtn.style.display = "none";
+  playerStatus.textContent = "🔒 Logget ind med Spotify";
 
-  player.addListener("ready", ({ device_id }) => {
-    deviceId = device_id;
-    playerReady = true;
-    playerStatus.textContent = "🎶 Player klar – enhed: " + deviceId;
-    console.log("Spotify Player klar med deviceId:", deviceId);
-  });
+  const script = document.createElement("script");
+  script.src = "https://sdk.scdn.co/spotify-player.js";
+  document.body.appendChild(script);
 
-  player.connect();
-};
+  window.onSpotifyWebPlaybackSDKReady = () => {
+    player = new Spotify.Player({
+      name: "Den Sorte Skole Player",
+      getOAuthToken: cb => { cb(accessToken); },
+      volume: 0.8
+    });
 
-// Helper til at vente på player/device før afspilning
-function playTrackWhenReady(uri){
-  const attemptPlay = () => {
-    const missing = [];
-    if (!uri) missing.push("currentTrackUri mangler");
-    if (!player) missing.push("player ikke initialiseret");
-    if (!deviceId) missing.push("deviceId ikke klar");
-    if (!playerReady) missing.push("player ikke klar");
+    player.addListener("ready", ({ device_id }) => {
+      deviceId = device_id;
+      playerReady = true;
+      playerStatus.textContent = "🎶 Player klar – enhed: " + deviceId;
+    });
 
-    if (missing.length > 0) {
-      console.warn("Afspilning venter, fordi:", missing.join(", "));
-      setTimeout(attemptPlay, 200);
-    } else {
-      fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
-        method:"PUT",
-        body: JSON.stringify({ uris:[uri] }),
-        headers: {
-          "Content-Type":"application/json",
-          "Authorization": `Bearer ${accessToken}`
-        }
-      }).then(()=>{
-        console.log("Afspiller track:", uri);
-        player.setVolume(0.8);
-        playerStatus.textContent = "▶️ Afspiller nu";
-      }).catch(err=>{
-        console.error("Fejl ved afspilning:", err);
-        playerStatus.textContent = "❌ Fejl ved afspilning";
-      });
-    }
+    player.connect();
   };
-  attemptPlay();
 }
 
-// currentQuestion afspilning
 db.ref(gameId + "/currentQuestion").on('value', snap => {
   const q = snap.val();
   if (q) {
@@ -308,32 +298,45 @@ db.ref(gameId + "/currentQuestion").on('value', snap => {
 
     currentQuestionPoints = q.points || 0;
 
-    if (q.songUrl) {
+    if (q.songUrl && player && deviceId && playerReady) {
       currentTrackUri = makeSpotifyUri(q.songUrl);
-      playTrackWhenReady(currentTrackUri);
+      fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
+        method: "PUT",
+        body: JSON.stringify({ uris: [currentTrackUri] }),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${accessToken}`
+        }
+      }).then(() => {
+        console.log("Afspiller");
+        player.setVolume(0.8);
+        playerStatus.textContent = "▶️ Afspiller nu";
+      }).catch(err => {
+        console.error(err);
+        playerStatus.textContent = "❌ Fejl ved afspilning";
+      });
     } else {
       answerDisplay.textContent = "";
       const missing = [];
       if (!q.songUrl) missing.push("q.songUrl mangler");
       if (!player) missing.push("player ikke initialiseret");
       if (!deviceId) missing.push("deviceId ikke klar");
+      if (!playerReady) missing.push("player ikke klar");
       console.warn("Musik blev ikke afspillet fordi:", missing.join(", "));
     }
+
   } else {
     answerDisplay.textContent = "";
   }
 });
 
-// Resten af din eksisterende kode fra buzz, holdliste, resetBuzz, correctBtn, wrongBtn osv.
-// Ingen ændringer i logik, styling, kommentarer eller funktionalitet
-
 let timerInterval = null;
 let currentBuzzCard = null;
+let currentQuestionPoints = 0;
 let currentCorrectAnswer = null;
 let questionOpen = false;
 let timerOnExpireCallback = null;
 
-// Holdliste med avatars
 db.ref(gameId + "/teams").on('value', snapshot => {
   teamList.innerHTML = "";
   snapshot.forEach(child => {
@@ -435,7 +438,7 @@ function resetBuzz(keepQuestionOpen = false){
     questionOpen = true;
   }
   currentBuzz.textContent="";
-  answerDisplay.textContent=""; 
+  answerDisplay.textContent="";
   correctBtn.style.display="none";
   wrongBtn.style.display="none";
   timerEl.textContent="";
@@ -500,6 +503,21 @@ function makeSpotifyUri(url){
     return "spotify:track:"+id;
   }
   return url;
+}
+
+function startTimer(seconds, onExpire){
+  clearInterval(timerInterval);
+  let t = seconds;
+  timerEl.textContent = t;
+  timerInterval = setInterval(()=>{
+    t--;
+    timerEl.textContent = t;
+    if(t<=0){
+      clearInterval(timerInterval);
+      timerEl.textContent="";
+      if(onExpire) onExpire();
+    }
+  }, 1000);
 }
 
 </script>
