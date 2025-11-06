@@ -57,6 +57,11 @@ const redirectUri = "https://mopsterofpuppets.github.io/densorteskole/qm.htm";
 const scopes = "streaming user-read-email user-read-private user-modify-playback-state user-read-playback-state";
 const authUrl = new URL("https://accounts.spotify.com/authorize");
 
+let accessToken = null;
+let player = null;
+let deviceId = null;
+let currentTrackUri = null;
+
 const generateRandomString = (length) => {
   const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   const values = crypto.getRandomValues(new Uint8Array(length));
@@ -172,12 +177,6 @@ const endGameBtn = document.getElementById('endGameBtn');
 
 const loginBtn = document.getElementById("loginBtn");
 const playerStatus = document.getElementById("playerStatus");
-
-
-let accessToken = null;
-let player = null;
-let deviceId = null;
-let currentTrackUri = null;
 
 // Hent access token fra URL hash
 const hash = window.location.hash.substring(1);
