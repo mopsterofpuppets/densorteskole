@@ -198,7 +198,9 @@ let code = urlParams.get('code') || localStorage.getItem("code");
       headers: { "Authorization": "Bearer " + accessToken }
     });
 
-    if (test.status === 401) {
+    console.log("Svar fra /me: " + test.status);
+
+    if (test.status === 401 ) {
       console.warn("Access token udløbet – forsøger at forny via refresh_token...");
       if (localStorage.getItem('refresh_token')) {
         await getRefreshToken();
@@ -208,6 +210,7 @@ let code = urlParams.get('code') || localStorage.getItem("code");
           localStorage.removeItem('access_token');
           playerStatus.textContent = "⚠️ Kunne ikke forny token – log ind igen";
           loginBtn.style.display = "inline-block";
+          console.log("Enabler login button igen - kunne ikke forny token");
           return;
         }
       } else {
@@ -215,6 +218,7 @@ let code = urlParams.get('code') || localStorage.getItem("code");
         playerStatus.textContent = "⚠️ Ingen refresh_token — log ind igen";
         loginBtn.style.display = "inline-block";
         localStorage.removeItem('access_token');
+        console.log("Enabler login button igen - ingen refresh token i local storage");
         return;
       }
     }
