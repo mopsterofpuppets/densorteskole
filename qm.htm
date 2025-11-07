@@ -77,6 +77,7 @@ let accessToken = null;
 let player = null;
 let deviceId = null;
 let currentTrackUri = null;
+let isPlayerReady = false; // 🟡 nyt flag
 
 const generateRandomString = (length) => {
   const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -236,11 +237,18 @@ let code = urlParams.get('code') || localStorage.getItem("code");
 
       player.addListener("ready", ({ device_id }) => {
         deviceId = device_id;
+        isPlayerReady = true; // 🟡 markér at player er klar
         playerStatus.textContent = "🎶 Player klar – enhed: " + deviceId;
         console.log("Player ready - device = " + deviceId);
       });
 
-      player.connect().then(success => console.log("Player connect result:", success));
+      player.connect().then(success => {
+        console.log("Player connect result:", success);
+        if (!success) {
+          console.warn("⚠️ Player connect mislykkedes");
+          isPlayerReady = false;
+        }
+      });
       console.log("Player connected");
     };
   } else {
@@ -276,7 +284,8 @@ db.ref(gameId + "/currentQuestion").on('value', snap => {
 
     currentQuestionPoints = q.points || 0;
 
-    if (q.songUrl && player) {
+    // 🟡 Kun forsøg at afspille hvis playeren faktisk er klar
+    if (q.songUrl && player && accessToken && isPlayerReady) {
       currentTrackUri = makeSpotifyUri(q.songUrl);
       fetch(`https://api.spotify.com/v1/me/player/play`, {
         method: "PUT",
@@ -298,6 +307,7 @@ db.ref(gameId + "/currentQuestion").on('value', snap => {
       const missing = [];
       if (!q.songUrl) missing.push("q.songUrl mangler");
       if (!player) missing.push("player ikke initialiseret");
+      if (!isPlayerReady) missing.push("player ikke klar");
       console.warn("Musik blev ikke afspillet fordi:", missing.join(", "));
     }
 
