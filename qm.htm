@@ -202,6 +202,7 @@ let code = urlParams.get('code') || localStorage.getItem("code");
       if (localStorage.getItem('refresh_token')) {
         await getRefreshToken();
         accessToken = localStorage.getItem("access_token");
+        console.log("Access token er nu: " + accessToken);
         if (!accessToken) {
           localStorage.removeItem('access_token');
           playerStatus.textContent = "⚠️ Kunne ikke forny token – log ind igen";
