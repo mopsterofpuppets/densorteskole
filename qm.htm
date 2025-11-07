@@ -487,13 +487,19 @@ function stopTrack(){
   }
 }
 
-function makeSpotifyUri(url){
-  if(!url) return null;
-  if(url.startsWith("spotify:track:")) return url;
-  if(url.includes("open.spotify.com/track/")){
+function makeSpotifyUri(url) {
+  if (!url) return null;
+
+  // Allerede et korrekt URI-format
+  if (url.startsWith("spotify:track:")) return url;
+
+  // Håndtér både /track/ og /embed/track/
+  if (url.includes("open.spotify.com/track/") || url.includes("open.spotify.com/embed/track/")) {
     const id = url.split("track/")[1].split("?")[0];
-    return "spotify:track:"+id;
+    return "spotify:track:" + id;
   }
+
+  // fallback
   return url;
 }
 
