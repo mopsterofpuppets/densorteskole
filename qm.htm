@@ -288,10 +288,12 @@ db.ref(gameId + "/currentQuestion").on('value', snap => {
 
     currentQuestionPoints = q.points || 0;
 
+    console.log("🎧 Forsøger at starte afspilning på Web Player device:", deviceId);
+
     // 🟡 Kun forsøg at afspille hvis playeren faktisk er klar
-    if (q.songUrl && player && accessToken && isPlayerReady) {
+    if (q.songUrl && player && accessToken && isPlayerReady && deviceId) {
       currentTrackUri = makeSpotifyUri(q.songUrl);
-      fetch(`https://api.spotify.com/v1/me/player/play`, {
+      fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
         method: "PUT",
         body: JSON.stringify({ uris: [currentTrackUri] }),
         headers: {
