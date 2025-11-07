@@ -131,7 +131,7 @@ const getToken = async (code) => {
 
 const getRefreshToken = async () => {
   const refreshToken = localStorage.getItem('refresh_token');
-  if (!refreshToken) {
+  if (!refreshToken || refreshToken === 'null') {
     console.warn("Ingen refresh_token fundet — brugeren skal logge ind igen");
     return;
   }
@@ -165,7 +165,7 @@ const getRefreshToken = async () => {
 };
 
 let codeVerifier = localStorage.getItem('code_verifier');
-if (!codeVerifier) {
+if (!codeVerifier || codeVerifier === 'null') {
   codeVerifier = generateRandomString(64);
   localStorage.setItem('code_verifier', codeVerifier);
 }
