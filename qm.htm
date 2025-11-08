@@ -270,26 +270,28 @@ try {
 
       player.addListener("ready", async ({ device_id }) => {
         deviceId = device_id;
-        isPlayerReady = true; // 🟡 markér at player er klar
+        isPlayerReady = true;
         playerStatus.textContent = "🎶 Player klar – enhed: " + deviceId;
         console.log("Player ready - device = " + deviceId);
 
+        // 🕐 Vent et sekund så Spotify når at registrere enheden
+        await new Promise(r => setTimeout(r, 1000));
 
-  // 🟢 Gør Web Playeren til aktiv afspiller
-  try {
-    const transferRes = await fetch("https://api.spotify.com/v1/me/player", {
-      method: "PUT",
-      headers: {
-        "Authorization": `Bearer ${accessToken}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ device_ids: [deviceId], play: false })
-    });
-    console.log("Transfer playback:", transferRes.status);
-  } catch (err) {
-    console.error("Fejl ved transferPlayback:", err);
-  }
+        try {
+          const transferRes = await fetch("https://api.spotify.com/v1/me/player", {
+            method: "PUT",
+            headers: {
+              "Authorization": `Bearer ${accessToken}`,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ device_ids: [deviceId], play: false })
+          });
 
+          const text = await transferRes.text();
+          console.log("Transfer playback:", transferRes.status, text);
+        } catch (err) {
+          console.error("Fejl ved transferPlayback:", err);
+        }
       });
 
       player.connect().then(success => {
