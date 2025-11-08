@@ -81,6 +81,7 @@ button { cursor:pointer; }
 </div>
 
 <audio id="buzzSound" src="ping.mp3" preload="auto"></audio>
+<audio id="wrongSound" src="wrong.mp3" preload="auto"></audio>
 
 <div id="board" style="display:none"></div>
 <div id="timer"></div>
@@ -89,8 +90,8 @@ button { cursor:pointer; }
 <div id="answerDisplay" style="font-size:1.5em; margin-top:10px; color:#ffcc00;"></div>
 
 <div id="controlButtons">
-  <button id="correctBtn">CORRECT</button>
-  <button id="wrongBtn">WRONG</button>
+  <button id="correctBtn"> CORRECT </button>
+  <button id="wrongBtn"> WRONG </button>
 </div>
 
 <!-- Spotify Web Playback SDK kontroller -->
@@ -129,6 +130,7 @@ const currentBuzz = document.getElementById('currentBuzz');
 const answerDisplay = document.getElementById('answerDisplay');
 const endGameBtn = document.getElementById('endGameBtn');
 const buzzSound = document.getElementById("buzzSound");
+const wrongSound = document.getElementById("wrongSound");
 
 const loginBtn = document.getElementById("loginBtn");
 const playerStatus = document.getElementById("playerStatus");
@@ -643,6 +645,15 @@ correctBtn.addEventListener('click', ()=>{
 });
 
 wrongBtn.addEventListener('click', ()=>{
+
+  // ⚡ Afspil WRONG-lyd
+  try {
+    wrongSound.currentTime = 0;
+    wrongSound.play().catch(err => console.warn("Wrong-lyd kunne ikke afspilles:", err));
+  } catch(e){
+    console.warn("Wrong-lyd fejl:", e);
+  }
+
   db.ref(gameId + "/buzz").once('value').then(snap=>{
     const b = snap.val();
     if(b && b.buzzed && b.teamId){
