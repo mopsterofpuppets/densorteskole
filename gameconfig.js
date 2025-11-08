@@ -24,9 +24,9 @@ const songs = {
 
   "Royal Titel": [
     { spotify: "https://open.spotify.com/embed/track/3z8h0TU7ReDPLIbEnYhWZb", answer: "[Queen] - Bohemian" },
-    { spotify: "https://open.spotify.com/embed/track/4zQDbahu9jdsTPyxdnYRPw", answer: "The [Prince] (Metallica)" },
     { spotify: "https://open.spotify.com/embed/track/1nGUPxgKc1wmWfi8OkCCic", answer: "[King] Diamond - Abigail" },
-    { spotify: "https://open.spotify.com/embed/track/0Qc9Bd7qzA8Vx3aSIf1t8B", answer: "[King] Nothing - Metallica" },
+    { spotify: "https://open.spotify.com/embed/track/4zQDbahu9jdsTPyxdnYRPw", answer: "The [Prince] (Metallica)" },
+    { spotify: "https://open.spotify.com/embed/track/3PtaFRuHFIlF6ZcMVE4lF8", answer: "Accept - [Princess] of the dawn" },
     { spotify: "https://open.spotify.com/embed/track/7JqnJNDSk4zO2hUfSfTXFk", answer: "[Prince] of Darkness - Alice Cooper" }
   ],
 
@@ -49,7 +49,7 @@ const songs = {
 */
 
   "Krig og Konflikt": [
-    { spotify: "https://open.spotify.com/embed/track/5ohfpKB5tt275f4Y4lQ9F7", answer: "2. verdenskrig" },
+    { spotify: "https://open.spotify.com/embed/track/5ohfpKB5tt275f4Y4lQ9F7", answer: "Angel of Death - 2. verdenskrig" },
     { spotify: "https://open.spotify.com/embed/track/3ovjw5HZZv43SxTwApooCM", answer: "Wind of change - Den kolde krig" },
     { spotify: "https://open.spotify.com/embed/track/2dXsILW8gzkosqleHAvl0v", answer: "Den spanske borgerkrig (1936-1939)" },
     { spotify: "https://open.spotify.com/embed/track/5ppRGoTTMfQtFcmeZqwaAK", answer: "Protestsang mod Vietnamkrigen - Fortunate" },
