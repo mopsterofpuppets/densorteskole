@@ -23,7 +23,7 @@ button { cursor:pointer; }
 
 #volumeSlider {
     margin-top: 10px;
-    width:500px; margin-left:50px;
+    width:550px; margin-left:50px;
 }
 
 #controlButtons {
@@ -82,6 +82,7 @@ button { cursor:pointer; }
 
 <audio id="buzzSound" src="ping.mp3" preload="auto"></audio>
 <audio id="wrongSound" src="wrong.mp3" preload="auto"></audio>
+<audio id="correctSound" src="correct.wav" preload="auto"></audio>
 
 <div id="board" style="display:none"></div>
 <div id="timer"></div>
@@ -131,6 +132,7 @@ const answerDisplay = document.getElementById('answerDisplay');
 const endGameBtn = document.getElementById('endGameBtn');
 const buzzSound = document.getElementById("buzzSound");
 const wrongSound = document.getElementById("wrongSound");
+const correctSound = document.getElementById("correctSound");
 
 const loginBtn = document.getElementById("loginBtn");
 const playerStatus = document.getElementById("playerStatus");
@@ -640,6 +642,13 @@ correctBtn.addEventListener('click', ()=>{
       givePoints(b.teamId, currentQuestionPoints);
       resetBuzz(false); 
       stopTrack();
+
+      // Afspil korrekt lyd
+
+      try { 
+        correctSound.currentTime = 0; 
+        correctSound.play().catch(()=>{}); 
+      } catch(e) {}
     }
   });
 });
