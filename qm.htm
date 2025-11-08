@@ -80,6 +80,8 @@ button { cursor:pointer; }
   <ul id="teamList"></ul>
 </div>
 
+<audio id="buzzSound" src="ping.mp3" preload="auto"></audio>
+
 <div id="board" style="display:none"></div>
 <div id="timer"></div>
 
@@ -126,6 +128,7 @@ const wrongBtn = document.getElementById('wrongBtn');
 const currentBuzz = document.getElementById('currentBuzz');
 const answerDisplay = document.getElementById('answerDisplay');
 const endGameBtn = document.getElementById('endGameBtn');
+const buzzSound = document.getElementById("buzzSound");
 
 const loginBtn = document.getElementById("loginBtn");
 const playerStatus = document.getElementById("playerStatus");
@@ -550,6 +553,14 @@ db.ref(gameId + "/buzz").on('value', snap => {
     wrongBtn.style.display = "inline-block";
 
     reduceVolumeForBuzz();
+
+      // ⚡ Her spiller vi lyd EN gang
+      try {
+        buzzSound.currentTime = 0;
+        buzzSound.play().catch(err => console.warn("Buzz-lyd kunne ikke afspilles:", err));
+      } catch(e) {
+        console.warn("Buzz-lyd fejl:", e);
+      }
 
     startTimer(10, ()=>{
       db.ref(gameId + "/buzz").once('value').then(snap2=>{
