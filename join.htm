@@ -67,18 +67,10 @@ const joinBtn = document.getElementById("joinBtn");
 const errorMsg = document.getElementById("errorMsg");
 const teamInput = document.getElementById("teamName");
 
-// Avatar-generator (samme som game.htm)
-const avatars = [
-  "https://api.dicebear.com/5.x/identicon/svg?seed=1",
-  "https://api.dicebear.com/5.x/identicon/svg?seed=2",
-  "https://api.dicebear.com/5.x/identicon/svg?seed=3",
-  "https://api.dicebear.com/5.x/identicon/svg?seed=4",
-  "https://api.dicebear.com/5.x/identicon/svg?seed=5",
-  "https://api.dicebear.com/5.x/identicon/svg?seed=6",
-  "https://api.dicebear.com/5.x/identicon/svg?seed=7",
-  "https://api.dicebear.com/5.x/identicon/svg?seed=8",
-  "https://api.dicebear.com/5.x/identicon/svg?seed=9"
-];
+// Avatar-generator (100 forskellige)
+const avatars = Array.from({length: 100}, (_, i) => 
+  `https://api.dicebear.com/5.x/identicon/svg?seed=${i+1}`
+);
 
 joinBtn.addEventListener("click", ()=>{
   const name = teamInput.value.trim();
