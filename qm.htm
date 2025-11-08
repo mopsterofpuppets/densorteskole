@@ -12,7 +12,7 @@
 <script src="gameconfig.js"></script>
 </head>
 <style>
-body{ font-size:1.8em; }
+body{ font-size:1.6em; }
 button { cursor:pointer; }
 #playerControls { margin-top:10px; }
 
@@ -22,9 +22,8 @@ button { cursor:pointer; }
 }
 
 #volumeSlider {
-    width: 80%;            /* bredere slider for nemmere fingerkontrol */
-    margin-left: 0;
     margin-top: 10px;
+    width:500px; margin-left:50px;
 }
 
 #controlButtons {
@@ -33,10 +32,23 @@ button { cursor:pointer; }
     margin-top: 15px;
 }
 
+#playPauseBtn {
+    background: #ffcc00;        /* lysere baggrund, tydelig på mørk baggrund */
+    color: #330000;             /* kontrastfarve for tekst/emoji */
+    font-size: 2.5em;           /* større touch-target */
+    padding: 15px 25px;         /* større klikområde */
+    border: none;               /* fjern global button-border */
+    border-radius: 10px;        /* rund hjørner */
+    box-shadow: 0 0 15px #ff8800; /* enkel skygge, fjern rød “glød” */
+    cursor: pointer;
+    margin: 10px 5px;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
 #correctBtn {
     background-color: #4CAF50; /* grøn */
     color: white;
-    font-size: 1.5em;
+    font-size: 1.9em;
     padding: 10px 20px;
     border-radius: 8px;
     border: none;
@@ -45,15 +57,15 @@ button { cursor:pointer; }
 #wrongBtn {
     background-color: #f44336; /* rød */
     color: white;
-    font-size: 1.5em;
+    font-size: 1.9em;
     padding: 10px 20px;
     border-radius: 8px;
     border: none;
 }
 
 #endGameBtn {
-    margin-top: 100px;   /* større afstand fra øvrige elementer */
-    font-size: 1.4em;   /* lidt større knap */
+    margin-top: 250px;   /* større afstand fra øvrige elementer */
+    font-size: 1.5em;   /* lidt større knap */
     padding: 50px 50px;
     border-radius: 8px;
 }
@@ -86,7 +98,7 @@ button { cursor:pointer; }
 
   <div id="spotifyControls" style="margin-top:20px; display:none;">
     <button id="playPauseBtn">▶️</button>
-    <input id="volumeSlider" type="range" min="0" max="100" value="80" style="width:400px; margin-left:50px;">
+    <input id="volumeSlider" type="range" min="0" max="100" value="80">
   </div>
 
 </div>
