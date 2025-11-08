@@ -548,9 +548,9 @@ endGameBtn.addEventListener('click', () => {
 });
 
 db.ref(gameId + "/buzz").on('value', snap => {
-  console.log("Buzzed");
   const b = snap.val();
   if(b && b.buzzed){
+    console.log("Buzzed");
     correctBtn.style.display = "inline-block";
     wrongBtn.style.display = "inline-block";
 
