@@ -8,18 +8,18 @@ const categories = ["Krig og Konflikt", "Tallet bag sangen", "Stort Band Lille S
 const songs = {
   "Tallet bag sangen": [
     { spotify: "https://open.spotify.com/embed/track/2SrVGpjv0mqCR6j9EZPSm2", answer: "[2] minutes to midnight)" },
-    { spotify: "https://open.spotify.com/embed/track/3nlGByvetDcS1uomAoiBmy", answer: "[666] - The number of the beast" },
+    { spotify: "https://open.spotify.com/embed/track/2azjvC3naXAE7O7VM1jjLR", answer: "Det var i [1949] - og [16] år - Jutlandia fra 1986" },
     { spotify: "https://open.spotify.com/embed/track/6b6uLZsoGhObYexIxnRbIb", answer: "Hangar [18]" },
     { spotify: "https://open.spotify.com/embed/track/75t7W9LYbkgbkeT6B5EoHM", answer: "[99] ways to die" },
     { spotify: "https://open.spotify.com/embed/track/5ohfpKB5tt275f4Y4lQ9F7", answer: "[400.000] more to die" },    
   ],
 
   "Stort Band Lille Sang": [
-    { spotify: "https://open.spotify.com/embed/track/14k511GlTtiybELsNoEZLq", answer: "Boa - Volbeat, 2007" },
+    { spotify: "https://open.spotify.com/embed/track/14k511GlTtiybELsNoEZLq", answer: "Boa - Volbeat, 2007, 500.000 afspilninger" },
     { spotify: "https://open.spotify.com/embed/track/3BtHClmMmURD8UHF2fiyxt", answer: "Nirvana - Sliver (Incesticide, 1992), 97 mio. afspilninger" },
-    { spotify: "https://open.spotify.com/embed/track/09VNOLsjKwQasQXhsS8sRA", answer: "The Judas Kiss - Metallica (2008, Death Magnetic)" },
-    { spotify: "https://open.spotify.com/embed/track/2O63bJ9cv7p3dziHbofVqa", answer: "Absolution - Megadeth" },
-    { spotify: "https://open.spotify.com/embed/track/1RyhDBcbj7W46251Xr5mDC", answer: "Playing With Dolls - Slayer" }
+    { spotify: "https://open.spotify.com/embed/track/09VNOLsjKwQasQXhsS8sRA", answer: "The Judas Kiss - Metallica (2008, Death Magnetic), 15 mio. afspilninger" },
+    { spotify: "https://open.spotify.com/embed/track/7fzM3CmIXKgPvbiV1YYP4H", answer: "Escape from Reality - Judas Prist fra 2024, 1 mio. afspilninger" },
+    { spotify: "https://open.spotify.com/embed/track/1RyhDBcbj7W46251Xr5mDC", answer: "Playing With Dolls - Slayer, 2.6 mio. afspilninger" }
   ],
 
   "Royal Titel": [
