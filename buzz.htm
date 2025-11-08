@@ -203,14 +203,24 @@ buzzBtn.addEventListener('click', ()=>{
 });
 
 
-// Ved load: tjek om teamet allerede er disket
+// Ved load: tjek om teamet allerede er disket eller har svaret korrekt
 disqualifiedTeamRef.once('value').then(dsnap => {
-  if(dsnap.val()){
-    setDisqualifiedState();
-    stopCountdown();
-  }
+  const isDisqualified = dsnap.val();
+  correctRef.once('value').then(csnap => {
+    const hasAnsweredCorrectly = csnap.val();
+    
+    if(isDisqualified){
+      setDisqualifiedState();
+      stopCountdown();
+    } else if(hasAnsweredCorrectly){
+      // Holdet har allerede svaret korrekt på dette spørgsmål
+      buzzBtn.disabled = true;
+      buzzBtn.classList.remove('buzzed','timerActive');
+      buzzBtn.classList.add('disabled');
+      stopCountdown();
+    }
+  });
 });
-
 </script>
 </body>
 </html>
