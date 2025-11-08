@@ -40,6 +40,12 @@ button { cursor:pointer; }
 <div id="playerControls">
   <button id="loginBtn">Log ind med Spotify</button>
   <p id="playerStatus">Spotify ikke forbundet</p>
+
+  <div id="spotifyControls" style="margin-top:10px; display:none;">
+    <button id="playPauseBtn">▶️</button>
+    <input id="volumeSlider" type="range" min="0" max="100" value="80" style="width:150px; margin-left:10px;">
+  </div>
+
 </div>
 
 <!-- Afslut spil-knap -->
@@ -68,6 +74,11 @@ const endGameBtn = document.getElementById('endGameBtn');
 
 const loginBtn = document.getElementById("loginBtn");
 const playerStatus = document.getElementById("playerStatus");
+
+const playPauseBtn = document.getElementById("playPauseBtn");
+const volumeSlider = document.getElementById("volumeSlider");
+const spotifyControls = document.getElementById("spotifyControls");
+let isPlaying = false;
 
 // Hent access token fra URL hash
 const hash = window.location.hash.substring(1);
@@ -268,10 +279,17 @@ try {
       player.addListener('account_error', ({ message }) => console.error('Account error:', message));
       player.addListener('playback_error', ({ message }) => console.error('Playback error:', message));
 
+      player.addListener('player_state_changed', state => {
+        if (!state) return;
+        isPlaying = !state.paused;
+        playPauseBtn.textContent = isPlaying ? "⏸️" : "▶️";
+      });
+
       player.addListener("ready", async ({ device_id }) => {
         deviceId = device_id;
         isPlayerReady = true;
-        playerStatus.textContent = "🎶 Player klar – enhed: " + deviceId;
+        playerStatus.textContent = "🎶 Player klar";
+        spotifyControls.style.display = "block";
         console.log("Player ready - device = " + deviceId);
 
         // 🕐 Vent et sekund så Spotify når at registrere enheden
@@ -302,11 +320,48 @@ try {
         }
       });
       console.log("Player connected");
+
+      volumeSlider.addEventListener("input", async (e) => {
+         const newVol = e.target.value / 100;
+        if (player) {
+          try {
+            await player.setVolume(newVol);
+            console.log("🔊 Volume:", newVol);
+          } catch (err) {
+            console.error("Fejl ved setVolume:", err);
+          }
+        }
+      });
+
+      playPauseBtn.addEventListener("click", async () => {
+        if (!player || !accessToken) return;
+        try {
+          if (isPlaying) {
+            await fetch("https://api.spotify.com/v1/me/player/pause", {
+              method: "PUT",
+              headers: { "Authorization": `Bearer ${accessToken}` }
+            });
+            playPauseBtn.textContent = "▶️";
+            isPlaying = false;
+          } else {
+            await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
+              method: "PUT",
+              headers: { "Authorization": `Bearer ${accessToken}` }
+            });
+            playPauseBtn.textContent = "⏸️";
+            isPlaying = true;
+         }
+        } catch (err) {
+          console.error("Fejl ved play/pause:", err);
+        }
+      });
+
     };
   } else {
     console.log("Ingen access_token endnu – klik på 'Log ind med Spotify'");
   }
 })();
+
 
 async function verifySpotifyAccess(token) {
   const res = await fetch("https://api.spotify.com/v1/me", {
@@ -416,6 +471,13 @@ db.ref(gameId + "/teams").on('value', snapshot => {
     teamList.appendChild(li);
   });
 });
+
+async function setProgramVolume(vol) {
+  if (player) {
+    await player.setVolume(vol);
+    volumeSlider.value = vol * 100;
+  }
+}
 
 endGameBtn.addEventListener('click', () => {
   if(confirm("Er du sikker på, at du vil afslutte spillet?")){
@@ -533,11 +595,11 @@ function givePoints(teamId, points){
 }
 
 function reduceVolumeForBuzz(){
-  if(player) player.setVolume(0.4);
+  setProgramVolume(0.3);
 }
 
 function restoreVolume(){
-  if(player) player.setVolume(0.8);
+  setProgramVolume(0.8);
 }
 
 function stopTrack(){
