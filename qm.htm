@@ -15,6 +15,49 @@
 body{ font-size:1.6em; }
 button { cursor:pointer; }
 #playerControls { margin-top:10px; }
+
+#spotifyControls button {
+    font-size: 2em;       /* større play/pause knap */
+    padding: 15px 25px;   /* større touch-target */
+}
+
+#volumeSlider {
+    width: 80%;            /* bredere slider for nemmere fingerkontrol */
+    margin-left: 0;
+    margin-top: 10px;
+}
+
+#controlButtons {
+    display: flex;
+    justify-content: space-around;  /* giver afstand mellem knapperne */
+    margin-top: 15px;
+}
+
+#correctBtn {
+    background-color: #4CAF50; /* grøn */
+    color: white;
+    font-size: 1.5em;
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: none;
+}
+
+#wrongBtn {
+    background-color: #f44336; /* rød */
+    color: white;
+    font-size: 1.5em;
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: none;
+}
+
+#endGameBtn {
+    margin-top: 30px;   /* større afstand fra øvrige elementer */
+    font-size: 1.3em;   /* lidt større knap */
+    padding: 12px 25px;
+    border-radius: 8px;
+}
+
 </style>
 <body>
 
@@ -570,7 +613,8 @@ correctBtn.addEventListener('click', ()=>{
     const b = snap.val();
     if(b && b.buzzed){
       givePoints(b.teamId, currentQuestionPoints);
-      resetBuzz(false);
+      resetBuzz(false); 
+      stopTrack();
     }
   });
 });
