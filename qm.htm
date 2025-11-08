@@ -690,11 +690,15 @@ function givePoints(teamId, points){
 }
 
 function reduceVolumeForBuzz(){
-  setProgramVolume(0.3);
+  setTimeout(() => {
+    setProgramVolume(0.3);
+  }, 500); // 0.5 sek forsinkelse
 }
 
 function restoreVolume(){
-  setProgramVolume(0.8);
+  setTimeout(() => {
+    setProgramVolume(0.8);
+  }, 500); // 0.5 sek forsinkelse
 }
 
 function stopTrack(){
