@@ -661,6 +661,23 @@ wrongBtn.addEventListener('click', ()=>{
     }
     resetBuzz(true);
   });
+
+
+    // 🔍 Tjek om alle hold er disket på dette spørgsmål
+    db.ref(gameId + "/teams").once('value').then(teamsSnap => {
+      const allTeams = teamsSnap.val() || {};
+      db.ref(gameId + "/disqualifiedTeams").once('value').then(disqSnap => {
+        const disqTeams = disqSnap.val() || {};
+        const allBuzzableTeams = Object.keys(allTeams);
+        const disqualifiedTeams = Object.keys(disqTeams);
+
+        if(allBuzzableTeams.every(teamId => disqualifiedTeams.includes(teamId))){
+          stopTrack();  // stopper Spotify-afspilningen
+          console.log("Alle hold er disket – musikken stoppet.");
+        }
+      });
+    });
+
 });
 
 function givePoints(teamId, points){
