@@ -194,37 +194,61 @@ let code = urlParams.get('code') || localStorage.getItem("code");
   if (accessToken) {
     console.log("Access token fundet:", accessToken);
 
-    const test = await fetch("https://api.spotify.com/v1/me", {
-      headers: { "Authorization": "Bearer " + accessToken }
-    });
+// 🧪 TEST Spotify API forbindelse + håndtér evt. udløbet token
+try {
+  const res = await fetch("https://api.spotify.com/v1/me", {
+    headers: { "Authorization": "Bearer " + accessToken }
+  });
 
-    console.log("Svar fra /me: " + test.status);
+  console.log("Svar fra /me:", res.status);
 
-    if (test.status === 401 ) {
-      console.warn("Access token udløbet – forsøger at forny via refresh_token...");
-      if (localStorage.getItem('refresh_token')) {
-        await getRefreshToken();
-        accessToken = localStorage.getItem("access_token");
-        console.log("Access token er nu: " + accessToken);
-        if (!accessToken || accessToken === 'null') {
-          localStorage.removeItem('access_token');
-          playerStatus.textContent = "⚠️ Kunne ikke forny token – log ind igen";
-          loginBtn.style.display = "inline-block";
-          console.log("Enabler login button igen - kunne ikke forny token");
-          return;
-        }
-      } else {
-        console.warn("Ingen refresh_token til fornyelse. Tvinger bruger til at logge ind igen med samtykke.");
-        playerStatus.textContent = "⚠️ Ingen refresh_token — log ind igen";
+  // Hvis token er udløbet, forsøg at forny
+  if (res.status === 401) {
+    console.warn("Access token udløbet – forsøger at forny via refresh_token...");
+
+    if (localStorage.getItem("refresh_token")) {
+      await getRefreshToken();
+      accessToken = localStorage.getItem("access_token");
+      console.log("Access token er nu:", accessToken);
+
+      if (!accessToken || accessToken === "null") {
+        localStorage.removeItem("access_token");
+        playerStatus.textContent = "⚠️ Kunne ikke forny token – log ind igen";
         loginBtn.style.display = "inline-block";
-        localStorage.removeItem('access_token');
-        console.log("Enabler login button igen - ingen refresh token i local storage");
+        console.log("Enabler login button igen - kunne ikke forny token");
         return;
       }
+
+      // 🔁 Forsøg /me igen efter fornyelse
+      console.log("Forsøger /me igen efter refresh...");
+      await verifySpotifyAccess(accessToken);
+    } else {
+      console.warn("Ingen refresh_token til fornyelse. Tvinger bruger til at logge ind igen med samtykke.");
+      playerStatus.textContent = "⚠️ Ingen refresh_token — log ind igen";
+      loginBtn.style.display = "inline-block";
+      localStorage.removeItem("access_token");
+      console.log("Enabler login button igen - ingen refresh token i local storage");
+      return;
     }
+  }
+
+  // Hvis /me lykkes (200 OK)
+  const data = await res.json();
+  if (res.ok) {
+    console.log("🔍 Test: /v1/me", data);
+    console.log(`✅ Forbundet som ${data.display_name} (${data.id}), produkt: ${data.product}`);
+    playerStatus.textContent = `🔒 Logget ind som ${data.display_name} (${data.product})`;
+  } else {
+    console.warn("⚠️ /me-fejl:", res.status, data);
+    playerStatus.textContent = "⚠️ Fejl ved /me – se console";
+  }
+
+} catch (err) {
+  console.error("❌ Kunne ikke kalde /v1/me:", err);
+  playerStatus.textContent = "❌ Fejl ved test af Spotify API";
+}
 
     loginBtn.style.display = "none";
-    playerStatus.textContent = "🔒 Logget ind med Spotify";
 
     const script = document.createElement("script");
     script.src = "https://sdk.scdn.co/spotify-player.js";
@@ -239,11 +263,33 @@ let code = urlParams.get('code') || localStorage.getItem("code");
 
       console.log("Player created");
 
-      player.addListener("ready", ({ device_id }) => {
+      player.addListener('initialization_error', ({ message }) => console.error('Init error:', message));
+      player.addListener('authentication_error', ({ message }) => console.error('Auth error:', message));
+      player.addListener('account_error', ({ message }) => console.error('Account error:', message));
+      player.addListener('playback_error', ({ message }) => console.error('Playback error:', message));
+
+      player.addListener("ready", async ({ device_id }) => {
         deviceId = device_id;
         isPlayerReady = true; // 🟡 markér at player er klar
         playerStatus.textContent = "🎶 Player klar – enhed: " + deviceId;
         console.log("Player ready - device = " + deviceId);
+
+
+  // 🟢 Gør Web Playeren til aktiv afspiller
+  try {
+    const transferRes = await fetch("https://api.spotify.com/v1/me/player", {
+      method: "PUT",
+      headers: {
+        "Authorization": `Bearer ${accessToken}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ device_ids: [deviceId], play: false })
+    });
+    console.log("Transfer playback:", transferRes.status);
+  } catch (err) {
+    console.error("Fejl ved transferPlayback:", err);
+  }
+
       });
 
       player.connect().then(success => {
@@ -259,6 +305,20 @@ let code = urlParams.get('code') || localStorage.getItem("code");
     console.log("Ingen access_token endnu – klik på 'Log ind med Spotify'");
   }
 })();
+
+async function verifySpotifyAccess(token) {
+  const res = await fetch("https://api.spotify.com/v1/me", {
+    headers: { "Authorization": "Bearer " + token }
+  });
+  const data = await res.json();
+  if (res.ok) {
+    console.log(`✅ Forbundet som ${data.display_name} (${data.id}), produkt: ${data.product}`);
+    playerStatus.textContent = `🔒 Logget ind som ${data.display_name} (${data.product})`;
+  } else {
+    console.warn("⚠️ /me-fejl:", res.status, data);
+    playerStatus.textContent = "⚠️ Fejl ved /me – se console";
+  }
+}
 
 loginBtn.addEventListener("click", async () => {
   const hashed = await sha256(codeVerifier);
